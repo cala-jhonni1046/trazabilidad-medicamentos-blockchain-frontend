@@ -2,7 +2,7 @@
 
 Este repositorio contiene el prototipo funcional (Frontend/Maqueta Interactiva) del sistema de trazabilidad de medicamentos apoyado en tecnología Blockchain y Telemetría IoT.
 
-🔗 **Ver Prototipo en Vivo (Netlify):** zingy-pony-a70463.netlify.app
+🔗 **Ver Prototipo en Vivo (Netlify):** [https://zingy-pony-a70463.netlify.app](https://zingy-pony-a70463.netlify.app)
 
 ---
 
