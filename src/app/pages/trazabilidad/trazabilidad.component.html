@@ -1,0 +1,71 @@
+<div class="trazabilidad-container">
+  <!-- Aviso de contenido de prueba -->
+  <div class="mock-notice-card">
+    <mat-icon class="notice-icon">info</mat-icon>
+    <div class="notice-text">
+      <strong>CONTENIDO DE PRUEBA IDENTIFICADO:</strong> Recorrido y bloques de trazabilidad simulados para ilustrar el flujo de custodia entre los roles del sistema sin conexión a un nodo blockchain real.
+    </div>
+  </div>
+
+  <header class="page-header">
+    <div>
+      <h2>Cadena de Trazabilidad e Inmutabilidad</h2>
+      <p>Línea temporal criptográfica del ciclo de vida del medicamento en la red blockchain.</p>
+    </div>
+    <div class="lote-selector-pill">
+      <mat-icon>tag</mat-icon>
+      <span>{{ loteSeleccionado }}</span>
+    </div>
+  </header>
+
+  <mat-card class="timeline-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Recorrido Verificado y Puntos de Custodia (Demostración)</mat-card-title>
+      <mat-card-subtitle>Validación descentralizada según roles de la red</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content class="timeline-content">
+      <div class="stepper-timeline">
+        <div *ngFor="let p of pasos" class="step-card" [ngClass]="p.estado">
+          <!-- Indicador lateral -->
+          <div class="step-indicator">
+            <div class="step-circle">
+              <mat-icon>{{ p.icono }}</mat-icon>
+            </div>
+            <div class="step-line" *ngIf="p.stepNumber < pasos.length"></div>
+          </div>
+
+          <!-- Contenido del paso -->
+          <div class="step-body">
+            <div class="step-header">
+              <div class="step-title-group">
+                <span class="role-tag">{{ p.rol }}</span>
+                <h3 class="step-action">{{ p.accion }}</h3>
+              </div>
+              <span class="step-badge" [ngClass]="p.estado">
+                {{ p.estado === 'completado' ? 'Confirmado en Cadena' : (p.estado === 'en-proceso' ? 'En Proceso' : 'Próximo Paso') }}
+              </span>
+            </div>
+
+            <div class="step-entity">
+              <strong>{{ p.entidad }}</strong> — <span class="cuit">CUIT: {{ p.cuit }}</span>
+            </div>
+
+            <p class="step-details">{{ p.detalles }}</p>
+
+            <div class="step-footer">
+              <div class="footer-item">
+                <mat-icon class="sub-icon">schedule</mat-icon>
+                <span>{{ p.timestamp }}</span>
+              </div>
+              <div class="footer-item" *ngIf="p.hash !== 'Pendiente'">
+                <mat-icon class="sub-icon">link</mat-icon>
+                <code class="hash-code">{{ p.hash }}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

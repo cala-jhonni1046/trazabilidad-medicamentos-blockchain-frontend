@@ -1,0 +1,88 @@
+<div class="layout-wrapper">
+  <!-- Cinta indicadora de entorno de prueba -->
+  <div class="test-environment-ribbon">
+    <mat-icon class="ribbon-icon">science</mat-icon>
+    <span class="ribbon-text">PROTOTIPO FRONTEND — CONTENIDO DE PRUEBA ESTÁTICO (SIN CONEXIÓN A BACKEND)</span>
+  </div>
+
+  <!-- Barra superior (Encabezado) -->
+  <mat-toolbar class="main-header">
+    <div class="header-left">
+      <button
+        mat-icon-button
+        (click)="toggleSidenav()"
+        aria-label="Alternar barra lateral"
+        class="toggle-btn"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <div class="brand">
+        <div class="brand-icon">
+          <mat-icon>health_and_safety</mat-icon>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">MediChain</span>
+          <span class="brand-subtitle">Trazabilidad Farmacéutica</span>
+        </div>
+      </div>
+    </div>
+
+    <span class="toolbar-spacer"></span>
+
+    <div class="header-right">
+      <div class="network-badge">
+        <span class="pulse-dot"></span>
+        <span class="network-label">Nodo Testnet</span>
+      </div>
+
+      <div class="role-badge">
+        <mat-icon class="role-icon">verified_user</mat-icon>
+        <span class="role-name">ANMAT / Fiscalizador</span>
+      </div>
+    </div>
+  </mat-toolbar>
+
+  <!-- Contenedor Sidenav Adaptable -->
+  <mat-sidenav-container class="sidenav-container">
+    <!-- Barra lateral izquierda -->
+    <mat-sidenav
+      #sidenav
+      [mode]="isMobile() ? 'over' : 'side'"
+      [opened]="isSidenavOpen()"
+      class="app-sidebar"
+    >
+      <div class="sidebar-header">
+        <span class="nav-section-title">MENÚ PRINCIPAL</span>
+      </div>
+
+      <mat-nav-list class="nav-list">
+        <a
+          mat-list-item
+          *ngFor="let item of navItems"
+          [routerLink]="item.path"
+          routerLinkActive="active-nav-link"
+          (click)="onNavItemClick()"
+          class="nav-link"
+        >
+          <mat-icon matListItemIcon class="nav-item-icon">{{ item.icon }}</mat-icon>
+          <span matListItemTitle class="nav-item-title">{{ item.title }}</span>
+        </a>
+      </mat-nav-list>
+
+      <div class="sidebar-footer">
+        <div class="footer-card">
+          <div class="footer-badge">DATOS DE PRUEBA</div>
+          <p class="footer-note">Primer Incremento Angular</p>
+          <span class="footer-version">v0.1.0-alpha • Standalone</span>
+        </div>
+      </div>
+    </mat-sidenav>
+
+    <!-- Cuerpo / Contenido principal -->
+    <mat-sidenav-content class="main-content-area">
+      <main class="content-inner">
+        <router-outlet></router-outlet>
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

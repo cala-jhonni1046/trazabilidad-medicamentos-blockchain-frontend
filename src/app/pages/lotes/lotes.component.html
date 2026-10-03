@@ -1,0 +1,104 @@
+<div class="lotes-container">
+  <!-- Aviso de contenido de prueba -->
+  <div class="mock-notice-card">
+    <mat-icon class="notice-icon">info</mat-icon>
+    <div class="notice-text">
+      <strong>CONTENIDO DE PRUEBA IDENTIFICADO:</strong> Lotes y transacciones simulados localmente en memoria. No corresponden a stock real ni interactúan con bases de datos.
+    </div>
+  </div>
+
+  <header class="page-header">
+    <div>
+      <h2>Control y Gestión de Lotes</h2>
+      <p>Registro de emisión, custodia y verificación térmica de lotes farmacéuticos.</p>
+    </div>
+    <div class="header-badge">
+      <mat-icon>inventory_2</mat-icon>
+      <span>{{ lotes.length }} Lotes de Prueba</span>
+    </div>
+  </header>
+
+  <mat-card class="table-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Listado de Lotes Registrados en Blockchain (Simulación)</mat-card-title>
+      <mat-card-subtitle>Datos simulados para el primer incremento de interfaz y navegación</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content class="table-content">
+      <div class="responsive-table-wrapper">
+        <table mat-table [dataSource]="lotes" class="mat-elevation-z0 custom-table">
+          <!-- Columna ID -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>Código de Lote</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="lote-code">{{ element.id }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Medicamento -->
+          <ng-container matColumnDef="medicamento">
+            <th mat-header-cell *matHeaderCellDef>Medicamento</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="med-cell">
+                <span class="med-name">{{ element.medicamento }}</span>
+                <span class="med-range">Rango térmico: {{ element.rangoExigido }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Laboratorio -->
+          <ng-container matColumnDef="laboratorio">
+            <th mat-header-cell *matHeaderCellDef>Laboratorio Emisor</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="entity-text">{{ element.laboratorio }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Custodia -->
+          <ng-container matColumnDef="custodia">
+            <th mat-header-cell *matHeaderCellDef>Custodia Actual</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="entity-text">{{ element.custodia }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Temperatura -->
+          <ng-container matColumnDef="temperatura">
+            <th mat-header-cell *matHeaderCellDef>Telemetría Actual</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="temp-badge" [class.alert]="element.estado === 'Cuarentena'">
+                <mat-icon class="temp-icon">thermostat</mat-icon>
+                {{ element.temperatura }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado Operativo</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="status-chip" [ngClass]="{
+                'status-liberado': element.estado === 'Liberado',
+                'status-transito': element.estado === 'En Tránsito',
+                'status-cuarentena': element.estado === 'Cuarentena'
+              }">
+                {{ element.estado }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Hash -->
+          <ng-container matColumnDef="hashTx">
+            <th mat-header-cell *matHeaderCellDef>Hash Ledger</th>
+            <td mat-cell *matCellDef="let element">
+              <code class="tx-hash">{{ element.hashTx }}</code>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
