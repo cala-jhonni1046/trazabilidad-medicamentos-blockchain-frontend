@@ -1,0 +1,114 @@
+<div class="dashboard-container">
+  <!-- Aviso de contenido de prueba -->
+  <div class="mock-notice-card">
+    <mat-icon class="notice-icon">info</mat-icon>
+    <div class="notice-text">
+      <strong>CONTENIDO DE PRUEBA IDENTIFICADO:</strong> Métricas e indicadores generados en memoria para verificar la interfaz y la navegación. No representan datos clínicos ni de producción.
+    </div>
+  </div>
+
+  <!-- Banner de bienvenida -->
+  <header class="dashboard-hero">
+    <div class="hero-text">
+      <h2>Panel General de Monitoreo</h2>
+      <p>Supervisión de trazabilidad criptográfica y telemetría de cadena de frío para medicamentos.</p>
+    </div>
+    <div class="hero-actions">
+      <a mat-flat-button color="primary" routerLink="/lotes">
+        <mat-icon>inventory_2</mat-icon>
+        Explorar Lotes
+      </a>
+      <a mat-stroked-button color="primary" routerLink="/trazabilidad">
+        <mat-icon>timeline</mat-icon>
+        Ver Trazabilidad
+      </a>
+    </div>
+  </header>
+
+  <!-- Tarjetas de métricas de prueba -->
+  <section class="metrics-grid">
+    <mat-card *ngFor="let m of metrics" class="metric-card" appearance="outlined">
+      <mat-card-header>
+        <div mat-card-avatar class="metric-icon-wrap" [ngClass]="m.badgeType">
+          <mat-icon>{{ m.icon }}</mat-icon>
+        </div>
+        <mat-card-title class="metric-title">{{ m.title }}</mat-card-title>
+        <mat-card-subtitle>
+          <span class="metric-badge" [ngClass]="m.badgeType">{{ m.badge }}</span>
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="metric-value">{{ m.value }}</div>
+        <div class="metric-subtitle">{{ m.subtitle }}</div>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <!-- Sección de eventos recientes y estado de red -->
+  <div class="dashboard-columns">
+    <!-- Lista de eventos de prueba -->
+    <mat-card class="events-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">sensors</mat-icon>
+          Actividad Reciente de Telemetría (Simulada)
+        </mat-card-title>
+        <mat-card-subtitle>Últimas emisiones registradas por los sensores de transporte en prueba</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="events-list">
+          <div *ngFor="let item of recentEvents" class="event-item">
+            <div class="event-status-indicator" [class.danger]="item.estado.includes('Cuarentena')" [class.success]="!item.estado.includes('Cuarentena')"></div>
+            <div class="event-details">
+              <div class="event-header">
+                <strong>{{ item.lote }}</strong>
+                <span class="event-time">{{ item.timestamp }}</span>
+              </div>
+              <div class="event-route">{{ item.origen }} &rarr; {{ item.destino }}</div>
+              <div class="event-meta">
+                <span class="meta-tag">Temperatura: {{ item.temp }}</span>
+                <span class="meta-status" [class.alert]="item.estado.includes('Cuarentena')">{{ item.estado }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Nodo Local MediChain -->
+    <mat-card class="node-info-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">security</mat-icon>
+          Nodo Local de Demostración
+        </mat-card-title>
+        <mat-card-subtitle>Simulación de red blockchain local</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <ul class="info-list">
+          <li>
+            <span class="info-label">Red:</span>
+            <span class="info-value">MediChain Testnet Local</span>
+          </li>
+          <li>
+            <span class="info-label">Estado:</span>
+            <span class="info-value status-online">● Activo (Simulación)</span>
+          </li>
+          <li>
+            <span class="info-label">Consenso:</span>
+            <span class="info-value">PoA (Autoridad Sanitaria ANMAT)</span>
+          </li>
+          <li>
+            <span class="info-label">Bloque Simulado:</span>
+            <span class="info-value hash">#0x7f4a...29b1</span>
+          </li>
+        </ul>
+
+        <div class="banner-hint">
+          <mat-icon>check_circle</mat-icon>
+          <span>Primer incremento Angular: Layout adaptable y navegación sin conexión backend.</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
