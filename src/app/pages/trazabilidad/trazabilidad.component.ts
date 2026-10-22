@@ -1,92 +1,170 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-
-interface TrazabilidadStep {
-  stepNumber: number;
-  rol: string;
-  entidad: string;
-  cuit: string;
-  accion: string;
-  timestamp: string;
-  estado: 'completado' | 'en-proceso' | 'pendiente';
-  icono: string;
-  hash: string;
-  detalles: string;
-}
+import { finalize, forkJoin, map, of, Subscription, switchMap } from 'rxjs';
+import {
+  ConsultaQR,
+  Despacho,
+  EventoCustodia,
+  Lote,
+  MedicamentosApiService,
+  mensajeApi,
+} from '../../core/medicamentos-api.service';
 
 @Component({
   selector: 'app-trazabilidad',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule],
   templateUrl: './trazabilidad.component.html',
   styleUrl: './trazabilidad.component.scss',
 })
-export class TrazabilidadComponent {
-  readonly loteSeleccionado = 'LOT-2026-904 (Insulina Glargina 100UI)';
+export class TrazabilidadComponent implements OnInit {
+  private readonly api = inject(MedicamentosApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private custodia?: Subscription;
+  private loteSolicitado: number | null = null;
+  cargandoLotes = false;
+  errorLotes = '';
+  lotes: Lote[] = [];
+  loteId: number | null = null;
+  despachos: Despacho[] = [];
+  eventos: { evento: EventoCustodia; despacho: Despacho }[] = [];
+  codigoQr = '';
+  consulta: ConsultaQR | null = null;
+  cargando = false;
+  consultando = false;
+  error = '';
+  errorQr = '';
 
-  readonly pasos: TrazabilidadStep[] = [
-    {
-      stepNumber: 1,
-      rol: 'LABORATORIO',
-      entidad: 'Laboratorios Beta S.A.',
-      cuit: '30-11223344-5',
-      accion: 'Fabricación y Emisión de Lote',
-      timestamp: '03/10/2026 08:30:15 ART',
-      estado: 'completado',
-      icono: 'biotech',
-      hash: '0x9fa12b...48c1',
-      detalles: 'Producción de 5,000 unidades. QR serializados emitidos en Smart Contract.',
-    },
-    {
-      stepNumber: 2,
-      rol: 'DISTRIBUIDOR',
-      entidad: 'Distribuidora Logística Sur',
-      cuit: '30-22334455-6',
-      accion: 'Asunción de Custodia y Telemetría IoT',
-      timestamp: '03/10/2026 11:15:40 ART',
-      estado: 'completado',
-      icono: 'local_shipping',
-      hash: '0x3c78d1...09ee',
-      detalles: 'Patente Camión AF-892-CD. Sensor IoT #SN-441 activo transmitiendo 4.1°C constante.',
-    },
-    {
-      stepNumber: 3,
-      rol: 'ANMAT',
-      entidad: 'Autoridad Sanitaria Nacional',
-      cuit: '30-00000000-1',
-      accion: 'Fiscalización y Validación de Cadena',
-      timestamp: '03/10/2026 11:20:00 ART',
-      estado: 'completado',
-      icono: 'verified',
-      hash: '0x12aae9...66f2',
-      detalles: 'Trinomio de custodia aprobado por Inspector Matriculado #8491.',
-    },
-    {
-      stepNumber: 4,
-      rol: 'FARMACIA',
-      entidad: 'Farmacia Hospitalaria Central',
-      cuit: '30-44556677-8',
-      accion: 'Recepción y Escaneo de Ingreso',
-      timestamp: '03/10/2026 14:05:22 ART',
-      estado: 'en-proceso',
-      icono: 'local_pharmacy',
-      hash: '0x4490bc...11ba',
-      detalles: 'Carga arribada a destino. Escaneo de bultos en proceso de verificación.',
-    },
-    {
-      stepNumber: 5,
-      rol: 'PACIENTE',
-      entidad: 'Portal Ciudadano / Validación Final',
-      cuit: 'Consumidor Final',
-      accion: 'Validación por Código QR y Dispensación',
-      timestamp: 'Pendiente de venta',
-      estado: 'pendiente',
-      icono: 'qr_code_scanner',
-      hash: 'Pendiente',
-      detalles: 'Se vinculará el QR único al DNI del paciente al momento de la dispensa.',
-    },
-  ];
+  ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.custodia?.unsubscribe());
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = Number(params.get('loteId'));
+      const solicitado = Number.isSafeInteger(id) && id > 0 ? id : null;
+      const cambio = solicitado !== this.loteSolicitado;
+      this.loteSolicitado = solicitado;
+      if (this.lotes.length && cambio) this.seleccionarDesdeRuta();
+    });
+    this.recargarLotes();
+  }
+
+  recargarLotes(): void {
+    if (this.cargandoLotes) return;
+    this.cargandoLotes = true;
+    this.errorLotes = '';
+    this.api
+      .getLotes()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.cargandoLotes = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (lotes) => {
+          this.lotes = lotes;
+          this.seleccionarDesdeRuta();
+        },
+        error: (err: unknown) => {
+          this.errorLotes = mensajeApi(err);
+        },
+      });
+  }
+
+  private seleccionarDesdeRuta(): void {
+    this.loteId = this.lotes.some((l) => l.id === this.loteSolicitado) ? this.loteSolicitado : null;
+    this.cargarCustodia();
+    if (this.loteSolicitado && !this.loteId)
+      this.error = 'El lote indicado no está disponible. Seleccioná otro lote.';
+    this.cdr.markForCheck();
+  }
+
+  seleccionarLote(): void {
+    this.loteSolicitado = this.loteId;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { loteId: this.loteId },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    this.cargarCustodia();
+  }
+
+  cargarCustodia(): void {
+    this.custodia?.unsubscribe();
+    this.eventos = [];
+    this.despachos = [];
+    this.error = '';
+    this.cargando = false;
+    if (!this.loteId) return;
+    this.cargando = true;
+    this.custodia = this.api
+      .getDespachos(Number(this.loteId))
+      .pipe(
+        switchMap((despachos) => {
+          const consultas = despachos.map((d) => this.api.getEventos(d.id));
+          return (consultas.length ? forkJoin(consultas) : of([] as EventoCustodia[][])).pipe(
+            map((grupos) => ({ despachos, grupos })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.cargando = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: ({ despachos, grupos }) => {
+          this.despachos = despachos;
+          this.eventos = grupos
+            .flatMap((grupo, index) =>
+              grupo.map((evento) => ({ evento, despacho: despachos[index] })),
+            )
+            .sort((a, b) => a.evento.fechaHoraEvento.localeCompare(b.evento.fechaHoraEvento));
+        },
+        error: (err: unknown) => {
+          this.error = mensajeApi(err);
+        },
+      });
+  }
+
+  consultarQR(): void {
+    if (this.consultando) return;
+    this.errorQr = '';
+    this.consulta = null;
+    const codigo = this.codigoQr.trim();
+    if (!codigo) {
+      this.errorQr = 'Ingresá un código QR.';
+      return;
+    }
+    this.consultando = true;
+    this.api
+      .consultarQR(codigo)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.consultando = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (consulta) => {
+          this.consulta = consulta;
+          this.consultando = false;
+        },
+        error: (err: unknown) => {
+          this.errorQr = mensajeApi(err);
+          this.consultando = false;
+        },
+      });
+  }
 }

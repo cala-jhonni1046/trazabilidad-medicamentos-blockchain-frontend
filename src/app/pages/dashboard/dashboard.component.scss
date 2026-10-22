@@ -33,7 +33,6 @@
   }
 }
 
-
 .dashboard-hero {
   display: flex;
   flex-wrap: wrap;
@@ -61,6 +60,7 @@
 
   .hero-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1rem;
 
@@ -68,7 +68,8 @@
       margin-top: 0;
     }
 
-    button, a {
+    button,
+    a {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
@@ -85,7 +86,9 @@
 .metric-card {
   border-radius: 12px;
   background-color: #ffffff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
@@ -172,7 +175,8 @@
   }
 }
 
-.events-card, .node-info-card {
+.events-card,
+.node-info-card {
   border-radius: 12px;
   background-color: #ffffff;
 

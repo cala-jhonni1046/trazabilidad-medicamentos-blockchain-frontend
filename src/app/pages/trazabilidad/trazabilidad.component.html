@@ -1,71 +1,151 @@
 <div class="trazabilidad-container">
-  <!-- Aviso de contenido de prueba -->
   <div class="mock-notice-card">
     <mat-icon class="notice-icon">info</mat-icon>
     <div class="notice-text">
-      <strong>CONTENIDO DE PRUEBA IDENTIFICADO:</strong> Recorrido y bloques de trazabilidad simulados para ilustrar el flujo de custodia entre los roles del sistema sin conexión a un nodo blockchain real.
+      Los eventos y hashes son registros locales demostrativos. No certifican autenticidad ni
+      representan una blockchain distribuida.
     </div>
   </div>
-
   <header class="page-header">
     <div>
-      <h2>Cadena de Trazabilidad e Inmutabilidad</h2>
-      <p>Línea temporal criptográfica del ciclo de vida del medicamento en la red blockchain.</p>
-    </div>
-    <div class="lote-selector-pill">
-      <mat-icon>tag</mat-icon>
-      <span>{{ loteSeleccionado }}</span>
+      <h2>Trazabilidad registrada</h2>
+      <p>Eventos de custodia del despacho y consulta informativa por QR.</p>
     </div>
   </header>
-
-  <mat-card class="timeline-card" appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Recorrido Verificado y Puntos de Custodia (Demostración)</mat-card-title>
-      <mat-card-subtitle>Validación descentralizada según roles de la red</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content class="timeline-content">
-      <div class="stepper-timeline">
-        <div *ngFor="let p of pasos" class="step-card" [ngClass]="p.estado">
-          <!-- Indicador lateral -->
+  <mat-card class="timeline-card" appearance="outlined"
+    ><mat-card-header><mat-card-title>Custodia por lote</mat-card-title></mat-card-header
+    ><mat-card-content>
+      <p *ngIf="cargandoLotes" role="status">Cargando lotes…</p>
+      <p *ngIf="errorLotes" role="alert" class="api-error">{{ errorLotes }}</p>
+      <button
+        *ngIf="errorLotes"
+        mat-stroked-button
+        type="button"
+        (click)="recargarLotes()"
+        [disabled]="cargandoLotes"
+      >
+        Reintentar carga de lotes
+      </button>
+      <p *ngIf="!cargandoLotes && !errorLotes && lotes.length === 0">
+        No hay lotes disponibles. Registrá uno desde la pantalla Lotes.
+      </p>
+      <label class="selector-label"
+        >Seleccionar lote
+        <select
+          name="loteId"
+          [(ngModel)]="loteId"
+          (ngModelChange)="seleccionarLote()"
+          [disabled]="cargandoLotes || !!errorLotes || lotes.length === 0"
+        >
+          <option [ngValue]="null">Seleccionar</option>
+          <option *ngFor="let lote of lotes" [ngValue]="lote.id">
+            {{ lote.codigoLote }} — {{ lote.medicamentoNombre }}
+          </option>
+        </select></label
+      >
+      <button
+        *ngIf="loteId"
+        mat-stroked-button
+        type="button"
+        (click)="cargarCustodia()"
+        [disabled]="cargando"
+      >
+        Actualizar custodia
+      </button>
+      <p *ngIf="error" role="alert" class="api-error">{{ error }}</p>
+      <p *ngIf="cargando" role="status">Cargando eventos…</p>
+      <p *ngIf="!error && !cargando && loteId && despachos.length === 0">
+        Este lote todavía no tiene despachos.
+      </p>
+      <p *ngIf="!error && !cargando && despachos.length > 0 && eventos.length === 0">
+        Hay despachos registrados, pero todavía no tienen eventos de custodia.
+      </p>
+      <div class="stepper-timeline" *ngIf="!cargando">
+        <div *ngFor="let item of eventos" class="step-card completado">
           <div class="step-indicator">
-            <div class="step-circle">
-              <mat-icon>{{ p.icono }}</mat-icon>
-            </div>
-            <div class="step-line" *ngIf="p.stepNumber < pasos.length"></div>
+            <div class="step-circle"><mat-icon>timeline</mat-icon></div>
           </div>
-
-          <!-- Contenido del paso -->
           <div class="step-body">
             <div class="step-header">
               <div class="step-title-group">
-                <span class="role-tag">{{ p.rol }}</span>
-                <h3 class="step-action">{{ p.accion }}</h3>
+                <span class="role-tag">Remito {{ item.despacho.numeroRemito }}</span>
+                <h3 class="step-action">{{ item.evento.tipo }}</h3>
               </div>
-              <span class="step-badge" [ngClass]="p.estado">
-                {{ p.estado === 'completado' ? 'Confirmado en Cadena' : (p.estado === 'en-proceso' ? 'En Proceso' : 'Próximo Paso') }}
-              </span>
+              <span class="step-badge completado">Registrado</span>
             </div>
-
-            <div class="step-entity">
-              <strong>{{ p.entidad }}</strong> — <span class="cuit">CUIT: {{ p.cuit }}</span>
-            </div>
-
-            <p class="step-details">{{ p.detalles }}</p>
-
+            <p class="step-details">
+              Evento de custodia registrado. Los textos libres y datos del actor no se muestran en
+              esta interfaz sin autenticación.
+            </p>
             <div class="step-footer">
-              <div class="footer-item">
-                <mat-icon class="sub-icon">schedule</mat-icon>
-                <span>{{ p.timestamp }}</span>
-              </div>
-              <div class="footer-item" *ngIf="p.hash !== 'Pendiente'">
-                <mat-icon class="sub-icon">link</mat-icon>
-                <code class="hash-code">{{ p.hash }}</code>
-              </div>
+              <span class="footer-item"
+                ><mat-icon class="sub-icon">schedule</mat-icon
+                >{{ item.evento.fechaHoraEvento | date: 'short' }}</span
+              ><span class="footer-item" *ngIf="item.evento.hashEvento"
+                ><mat-icon class="sub-icon">link</mat-icon>Hash local:
+                <code class="hash-code">{{ item.evento.hashEvento }}</code></span
+              >
             </div>
           </div>
         </div>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </mat-card-content></mat-card
+  >
+  <mat-card class="timeline-card" appearance="outlined"
+    ><mat-card-header
+      ><mat-card-title>Consulta pública de unidad por QR</mat-card-title
+      ><mat-card-subtitle
+        >Solo presenta los campos permitidos por el backend</mat-card-subtitle
+      ></mat-card-header
+    ><mat-card-content>
+      <form class="qr-form" (ngSubmit)="consultarQR()">
+        <label
+          >Código QR
+          <input
+            name="codigoQr"
+            [(ngModel)]="codigoQr"
+            required
+            maxlength="160"
+            [disabled]="consultando" /></label
+        ><button mat-flat-button type="submit" [disabled]="consultando || !codigoQr.trim()">
+          {{ consultando ? 'Consultando…' : 'Consultar' }}
+        </button>
+      </form>
+      <p *ngIf="consultando" role="status">Consultando unidad…</p>
+      <p *ngIf="errorQr" role="alert" class="api-error">{{ errorQr }}</p>
+      <section *ngIf="consulta as q" class="qr-result">
+        <h3>{{ q.medicamento?.nombre || 'Medicamento sin datos' }}</h3>
+        <p>
+          <strong>QR:</strong> {{ q.codigoConsultado }} · <strong>Unidad:</strong>
+          {{ q.estadoUnidad }} · <strong>Lote:</strong> {{ q.lote?.codigoLote || 'Sin lote' }} ({{
+            q.lote?.estadoLote || 'Sin estado'
+          }})
+        </p>
+        <p *ngIf="q.medicamento as medicamento">
+          <strong>Principio activo:</strong> {{ medicamento.principioActivo }} ·
+          <strong>Requiere cadena de frío:</strong>
+          {{ medicamento.requiereCadenaFrio ? 'Sí' : 'No' }}
+        </p>
+        <p *ngIf="q.lote?.fechaFabricacion">
+          <strong>Fabricación:</strong> {{ q.lote?.fechaFabricacion | date: 'short' }}
+        </p>
+        <p *ngIf="q.cuarentena?.enCuarentena" class="api-error">
+          <strong>En cuarentena:</strong> {{ q.cuarentena?.resumen }}
+          <span *ngIf="q.cuarentena?.fechaInicio"
+            >Desde {{ q.cuarentena?.fechaInicio | date: 'short' }}</span
+          >
+        </p>
+        <p *ngFor="let advertencia of q.advertencias" class="api-error">{{ advertencia }}</p>
+        <h4>Hitos públicos de custodia</h4>
+        <p *ngIf="!q.historialCustodia.length">Sin hitos públicos registrados.</p>
+        <ul>
+          <li *ngFor="let h of q.historialCustodia">
+            {{ h.fechaHoraEvento | date: 'short' }} — {{ h.descripcion }}
+            <small *ngIf="h.hashDemostrativo">(hash demostrativo: {{ h.hashDemostrativo }})</small>
+          </li>
+        </ul>
+        <p class="api-note">{{ q.informacionRegulatoria }}</p>
+      </section>
+    </mat-card-content></mat-card
+  >
 </div>

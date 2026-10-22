@@ -3,15 +3,16 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:integracion": "node scripts/verificar-integracion.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
   "dependencies": {
-    "@angular/animations": "^20.1.8",
+    "@angular/animations": "^22.2.0",
     "@angular/cdk": "^22.2.1",
     "@angular/common": "^22.2.0",
     "@angular/compiler": "^22.2.0",
