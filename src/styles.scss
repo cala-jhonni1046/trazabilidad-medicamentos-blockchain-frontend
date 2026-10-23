@@ -4,7 +4,15 @@ html,
 body {
   height: 100%;
   margin: 0;
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    'Roboto',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   background-color: #f4f6f9;
   color: #1e293b;
   -webkit-font-smoothing: antialiased;
@@ -14,3 +22,89 @@ body {
   box-sizing: border-box;
 }
 
+.api-error {
+  color: #991b1b;
+  background: #fef2f2;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+}
+.api-success {
+  color: #065f46;
+  background: #ecfdf5;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+}
+.api-note {
+  color: #475569;
+  line-height: 1.5;
+}
+.lote-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: end;
+}
+fieldset.lote-form {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+  min-width: 0;
+}
+.lote-form label,
+.selector-label,
+.qr-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+.lote-form input,
+.lote-form select,
+.selector-label select,
+.qr-form input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  font: inherit;
+}
+.qr-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.qr-form label {
+  flex: 1;
+  min-width: 200px;
+}
+.qr-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.api-error,
+.api-success {
+  overflow-wrap: anywhere;
+}
+.selector-label select {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 400px) {
+  .lote-form {
+    grid-template-columns: 1fr;
+  }
+  .qr-form label {
+    min-width: 0;
+    width: 100%;
+    flex-basis: 100%;
+  }
+}

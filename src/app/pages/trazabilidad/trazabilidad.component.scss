@@ -33,7 +33,6 @@
   }
 }
 
-
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -158,6 +157,8 @@
 
   .step-body {
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
     padding-bottom: 2rem;
 
     .step-header {
@@ -169,6 +170,8 @@
 
       .step-title-group {
         display: flex;
+        flex-wrap: wrap;
+        min-width: 0;
         align-items: center;
         gap: 0.6rem;
 
@@ -237,16 +240,21 @@
 
       .footer-item {
         display: inline-flex;
+        max-width: 100%;
+        min-width: 0;
         align-items: center;
         gap: 0.3rem;
 
         .sub-icon {
+          flex-shrink: 0;
           font-size: 0.95rem;
           width: 0.95rem;
           height: 0.95rem;
         }
 
         .hash-code {
+          min-width: 0;
+          overflow-wrap: anywhere;
           font-family: monospace;
           background-color: #f1f5f9;
           padding: 0.1rem 0.3rem;

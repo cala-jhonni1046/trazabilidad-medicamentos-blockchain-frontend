@@ -1,36 +1,43 @@
-# 🏥 MediChain - Plataforma Operativa de Trazabilidad e Inmutabilidad
+# MediChain — frontend académico
 
-Este repositorio contiene el prototipo funcional (Frontend/Maqueta Interactiva) del sistema de trazabilidad de medicamentos apoyado en tecnología Blockchain y Telemetría IoT.
+Interfaz Angular para consultar datos del backend de trazabilidad de medicamentos. La rama `release/profesor` contiene tres pantallas: panel general, lotes y trazabilidad. Utilizan los endpoints documentados en el OpenAPI del backend; la interfaz no simula una testnet, autenticación ni telemetría en tiempo real.
 
-🔗 **Ver Prototipo en Vivo (Netlify):** [https://zingy-pony-a70463.netlify.app](https://zingy-pony-a70463.netlify.app)
+## Ejecutar localmente
 
----
+Requiere Node.js y npm compatibles con Angular 22, y el backend Spring Boot escuchando en `http://localhost:8080`.
 
-## 📋 Instrucciones para Probar el Prototipo
+```bash
+npm install
+npm start
+```
 
-El sistema está diseñado basándose en un diagrama de clases estructurado por roles. Para evaluar el ciclo de vida completo de un medicamento, en la pantalla de inicio (Login) selecciona los diferentes roles en el siguiente orden lógico:
+Abrir `http://localhost:4200`. El proxy de desarrollo en `proxy.conf.json` envía `/api` a `http://localhost:8080`. Para otro puerto de backend, ajustar ese archivo. En producción, el servidor que aloje el frontend debe enviar `/api` al backend; el proxy de Angular solo se aplica durante `npm start`.
 
-### 1. Rol: SUPERADMIN (Sede Central)
-* **Crear Usuarios y Roles:** Simula el alta de nuevas entidades (Laboratorios, Logísticas, Farmacias) en la red blockchain asignándoles sus respectivos CUITs.
-* **Crear Cadena Trazable:** Genera un nuevo trinomio comercial (Enlace CUIT) vinculando a un Laboratorio, un Transporte y una Farmacia. Al crearlo, se dispara una notificación al Inspector ANMAT designado.
-* **Alta de Inspectores:** Registra a los fiscalizadores que tendrán poder de firma digital.
+## Pantallas y contrato
 
-### 2. Rol: ANMAT (Autoridad Sanitaria)
-* **Solicitudes Pendientes:** Aquí el inspector recibe y aprueba las cadenas trazables (Enlace CUIT) creadas previamente por el SuperAdmin o los laboratorios.
-* **Panel de Cuarentenas:** Dashboard donde los lotes que rompen la cadena de frío (reportados por sensores IoT) se bloquean automáticamente. El inspector tiene la potestad de auditar y "Liberar" o "Mantener" la cuarentena.
-* **Auditoría Global:** Permite auditar la inmutabilidad criptográfica de lotes enteros o códigos QR individuales escaneados por los pacientes.
+- Dashboard: `GET /api/lotes`, `/api/despachos-logisticos`, `/api/telemetrias-temperatura` y `/api/cuarentenas?estado=ABIERTA`. Calcula los contadores con las respuestas y muestra las últimas lecturas registradas.
+- Lotes: lista con `GET /api/lotes`; formulario de alta individual con `POST /api/lotes`. Las opciones se obtienen de `/api/medicamentos` y `/api/organizaciones` filtrando laboratorios. El backend asigna `CREADO` al lote.
+- Trazabilidad: despachos de un lote con `GET /api/despachos-logisticos?loteId=...`, eventos con `GET /api/despachos-logisticos/{id}/eventos` y consulta pública con `GET /api/public/consulta-qr/{codigoQr}`.
 
-### 3. Rol: LABORATORIO (Fabricante)
-* **Crear Lote y Enlazar CUITs:** Emite un nuevo lote masivo (ej. Insulina), definiendo la temperatura exigida (ej. 2°C a 8°C), y lo despacha asignando la patente del camión. Esto genera automáticamente los IDs únicos (QR) para cada caja.
+Los errores H0 se muestran en pantalla. El backend actual no autentica usuarios; no ingresar datos personales reales. Los hashes de custodia son demostrativos y no prueban autenticidad ni una blockchain distribuida.
 
-### 4. Rol: DISTRIBUIDOR (Logística)
-* **Verificar QR Bulto:** Simula el momento en que el transportista asume la custodia legal de la carga, estampando la fecha y hora en el sistema.
-* **Mapa GPS Telemetría:** Permite visualizar cómo los sensores IoT de la flota transmiten coordenadas y lecturas térmicas en tiempo real al backend.
+## Verificar las pantallas
 
-### 5. Rol: FARMACIA (Recepción y Venta)
-* **Recepcionar Carga:** La farmacia escanea el lote al llegar. Si el lote está en "Cuarentena" por falla térmica en ruta, el sistema bloquea su ingreso al inventario.
-* **Dispensar / Venta por DNI:** Simula la venta unitaria de una caja, vinculando el QR del medicamento al DNI del paciente, cerrando su ciclo útil para evitar reventas.
+```bash
+npm test -- --watch=false
+npm run build
+```
 
-### 6. Rol: PACIENTE (Portal Ciudadano)
-* **Verificar Autenticidad:** Permite a un consumidor final ingresar el código QR de su caja. Si todo es correcto, se le muestra la garantía de cadena de frío. Si el lote fue inmovilizado, salta una alerta roja.
-* **Reportes Ciudadanos:** Formulario directo para que el paciente denuncie cajas dañadas o sospechas de falsificación, lo cual impacta directamente en el panel de la ANMAT.
+Con frontend y backend iniciados, ejecutar en otra terminal:
+
+```bash
+npm run test:integracion
+```
+
+La integración usa `http://localhost:4200/api` y comprueba las respuestas reales a través del proxy, incluido crear y eliminar su propio lote de prueba. Necesita un medicamento y un laboratorio previamente registrados. Para otro puerto del frontend:
+
+```bash
+API_BASE_URL=http://127.0.0.1:4300/api npm run test:integracion
+```
+
+Los resultados y el alcance están en [docs/compatibilidad-backend.md](docs/compatibilidad-backend.md).

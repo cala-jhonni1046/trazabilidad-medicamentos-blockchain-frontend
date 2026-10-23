@@ -1,104 +1,138 @@
 <div class="lotes-container">
-  <!-- Aviso de contenido de prueba -->
-  <div class="mock-notice-card">
-    <mat-icon class="notice-icon">info</mat-icon>
-    <div class="notice-text">
-      <strong>CONTENIDO DE PRUEBA IDENTIFICADO:</strong> Lotes y transacciones simulados localmente en memoria. No corresponden a stock real ni interactúan con bases de datos.
-    </div>
-  </div>
-
   <header class="page-header">
     <div>
-      <h2>Control y Gestión de Lotes</h2>
-      <p>Registro de emisión, custodia y verificación térmica de lotes farmacéuticos.</p>
+      <h2>Lotes</h2>
+      <p>Consulta y registro de lotes de medicamentos.</p>
     </div>
-    <div class="header-badge">
-      <mat-icon>inventory_2</mat-icon>
-      <span>{{ lotes.length }} Lotes de Prueba</span>
-    </div>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="recargar()"
+      [disabled]="cargando || guardando"
+    >
+      Actualizar listado
+    </button>
   </header>
-
-  <mat-card class="table-card" appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Listado de Lotes Registrados en Blockchain (Simulación)</mat-card-title>
-      <mat-card-subtitle>Datos simulados para el primer incremento de interfaz y navegación</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content class="table-content">
-      <div class="responsive-table-wrapper">
-        <table mat-table [dataSource]="lotes" class="mat-elevation-z0 custom-table">
-          <!-- Columna ID -->
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef>Código de Lote</th>
-            <td mat-cell *matCellDef="let element">
-              <span class="lote-code">{{ element.id }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Medicamento -->
-          <ng-container matColumnDef="medicamento">
-            <th mat-header-cell *matHeaderCellDef>Medicamento</th>
-            <td mat-cell *matCellDef="let element">
-              <div class="med-cell">
-                <span class="med-name">{{ element.medicamento }}</span>
-                <span class="med-range">Rango térmico: {{ element.rangoExigido }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna Laboratorio -->
-          <ng-container matColumnDef="laboratorio">
-            <th mat-header-cell *matHeaderCellDef>Laboratorio Emisor</th>
-            <td mat-cell *matCellDef="let element">
-              <span class="entity-text">{{ element.laboratorio }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Custodia -->
-          <ng-container matColumnDef="custodia">
-            <th mat-header-cell *matHeaderCellDef>Custodia Actual</th>
-            <td mat-cell *matCellDef="let element">
-              <span class="entity-text">{{ element.custodia }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Temperatura -->
-          <ng-container matColumnDef="temperatura">
-            <th mat-header-cell *matHeaderCellDef>Telemetría Actual</th>
-            <td mat-cell *matCellDef="let element">
-              <span class="temp-badge" [class.alert]="element.estado === 'Cuarentena'">
-                <mat-icon class="temp-icon">thermostat</mat-icon>
-                {{ element.temperatura }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Estado -->
-          <ng-container matColumnDef="estado">
-            <th mat-header-cell *matHeaderCellDef>Estado Operativo</th>
-            <td mat-cell *matCellDef="let element">
-              <span class="status-chip" [ngClass]="{
-                'status-liberado': element.estado === 'Liberado',
-                'status-transito': element.estado === 'En Tránsito',
-                'status-cuarentena': element.estado === 'Cuarentena'
-              }">
-                {{ element.estado }}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Columna Hash -->
-          <ng-container matColumnDef="hashTx">
-            <th mat-header-cell *matHeaderCellDef>Hash Ledger</th>
-            <td mat-cell *matCellDef="let element">
-              <code class="tx-hash">{{ element.hashTx }}</code>
-            </td>
-          </ng-container>
-
+  <p class="api-note">
+    El estado inicial lo asigna el backend como CREADO. La temperatura mostrada es el rango exigido,
+    no una lectura en vivo.
+  </p>
+  <p *ngIf="error" role="alert" class="api-error">{{ error }}</p>
+  <p *ngIf="mensaje" role="status" class="api-success">{{ mensaje }}</p>
+  <mat-card class="table-card" appearance="outlined"
+    ><mat-card-header><mat-card-title>Crear lote</mat-card-title></mat-card-header
+    ><mat-card-content>
+      <form (ngSubmit)="crear(formLote)" #formLote="ngForm">
+        <fieldset class="lote-form" [disabled]="guardando || cargando">
+          <label
+            >Código de lote
+            <input name="codigoLote" [(ngModel)]="nuevo.codigoLote" required maxlength="80"
+          /></label>
+          <label
+            >Medicamento
+            <select name="medicamentoId" [(ngModel)]="nuevo.medicamentoId" required>
+              <option [ngValue]="null">Seleccionar</option>
+              <option *ngFor="let m of medicamentos" [ngValue]="m.id">{{ m.nombre }}</option>
+            </select></label
+          >
+          <label
+            >Laboratorio
+            <select name="laboratorioId" [(ngModel)]="nuevo.laboratorioId" required>
+              <option [ngValue]="null">Seleccionar</option>
+              <option *ngFor="let o of laboratorios" [ngValue]="o.id">
+                {{ o.nombre }} ({{ o.cuit }})
+              </option>
+            </select></label
+          >
+          <label
+            >Temperatura mínima °C
+            <input type="number" step="any" name="tempMin" [(ngModel)]="nuevo.tempMin"
+          /></label>
+          <label
+            >Temperatura máxima °C
+            <input type="number" step="any" name="tempMax" [(ngModel)]="nuevo.tempMax"
+          /></label>
+          <label
+            >Fabricación
+            <input
+              type="datetime-local"
+              name="fechaHoraFabricacion"
+              [(ngModel)]="nuevo.fechaHoraFabricacion"
+          /></label>
+          <button
+            mat-flat-button
+            type="submit"
+            [disabled]="
+              guardando ||
+              cargando ||
+              !formLote.valid ||
+              !nuevo.codigoLote.trim() ||
+              (nuevo.tempMin != null && nuevo.tempMax != null && nuevo.tempMin > nuevo.tempMax)
+            "
+          >
+            {{ guardando ? 'Guardando…' : 'Crear lote' }}
+          </button>
+        </fieldset>
+      </form>
+      <p
+        *ngIf="nuevo.tempMin != null && nuevo.tempMax != null && nuevo.tempMin > nuevo.tempMax"
+        role="alert"
+        class="api-error"
+      >
+        La temperatura mínima no puede superar la máxima.
+      </p>
+      <p *ngIf="medicamentos.length === 0 || laboratorios.length === 0" class="api-note">
+        Para crear un lote deben existir un medicamento y una organización de tipo LABORATORIO en el
+        backend.
+      </p>
+    </mat-card-content></mat-card
+  >
+  <p *ngIf="cargando" role="status">Cargando lotes…</p>
+  <mat-card class="table-card" appearance="outlined"
+    ><mat-card-header><mat-card-title>Lotes registrados</mat-card-title></mat-card-header
+    ><mat-card-content class="table-content">
+      <p *ngIf="!cargando && !error && lotes.length === 0">No hay lotes registrados.</p>
+      <div class="responsive-table-wrapper" *ngIf="lotes.length">
+        <table mat-table [dataSource]="lotes" class="custom-table">
+          <ng-container matColumnDef="codigoLote"
+            ><th mat-header-cell *matHeaderCellDef>Código</th>
+            <td mat-cell *matCellDef="let l">
+              <span class="lote-code">{{ l.codigoLote }}</span>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="medicamento"
+            ><th mat-header-cell *matHeaderCellDef>Medicamento</th>
+            <td mat-cell *matCellDef="let l">{{ l.medicamentoNombre }}</td></ng-container
+          >
+          <ng-container matColumnDef="laboratorio"
+            ><th mat-header-cell *matHeaderCellDef>Laboratorio</th>
+            <td mat-cell *matCellDef="let l">{{ l.laboratorioNombre }}</td></ng-container
+          >
+          <ng-container matColumnDef="rango"
+            ><th mat-header-cell *matHeaderCellDef>Rango °C</th>
+            <td mat-cell *matCellDef="let l">
+              {{
+                l.tempMin == null && l.tempMax == null
+                  ? 'No definido'
+                  : (l.tempMin ?? 'Sin mínimo') + ' a ' + (l.tempMax ?? 'Sin máximo')
+              }}
+            </td></ng-container
+          >
+          <ng-container matColumnDef="estado"
+            ><th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let l">{{ l.estado }}</td></ng-container
+          >
+          <ng-container matColumnDef="acciones"
+            ><th mat-header-cell *matHeaderCellDef>Acción</th>
+            <td mat-cell *matCellDef="let l">
+              <a mat-button routerLink="/trazabilidad" [queryParams]="{ loteId: l.id }"
+                >Ver custodia</a
+              >
+            </td></ng-container
+          >
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
-      </div>
-    </mat-card-content>
-  </mat-card>
+      </div> </mat-card-content
+  ></mat-card>
 </div>
