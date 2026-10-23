@@ -1,87 +1,155 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatIconModule } from '@angular/material/icon';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule, NgForm } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-
-export interface LoteItem {
-  id: string;
-  medicamento: string;
-  laboratorio: string;
-  custodia: string;
-  temperatura: string;
-  rangoExigido: string;
-  estado: 'En Tránsito' | 'Liberado' | 'Cuarentena';
-  hashTx: string;
-}
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+import { finalize, forkJoin } from 'rxjs';
+import {
+  Lote,
+  Medicamento,
+  MedicamentosApiService,
+  mensajeApi,
+  Organizacion,
+} from '../../core/medicamentos-api.service';
 
 @Component({
   selector: 'app-lotes',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    RouterModule,
     MatCardModule,
     MatTableModule,
-    MatChipsModule,
     MatIconModule,
     MatButtonModule,
   ],
   templateUrl: './lotes.component.html',
   styleUrl: './lotes.component.scss',
 })
-export class LotesComponent {
-  readonly displayedColumns: string[] = [
-    'id',
+export class LotesComponent implements OnInit {
+  private readonly api = inject(MedicamentosApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly displayedColumns = [
+    'codigoLote',
     'medicamento',
     'laboratorio',
-    'custodia',
-    'temperatura',
+    'rango',
     'estado',
-    'hashTx',
+    'acciones',
   ];
+  lotes: Lote[] = [];
+  medicamentos: Medicamento[] = [];
+  laboratorios: Organizacion[] = [];
+  cargando = false;
+  guardando = false;
+  error = '';
+  mensaje = '';
+  nuevo = {
+    codigoLote: '',
+    medicamentoId: null as number | null,
+    laboratorioId: null as number | null,
+    tempMin: null as number | null,
+    tempMax: null as number | null,
+    fechaHoraFabricacion: '',
+  };
 
-  readonly lotes: LoteItem[] = [
-    {
-      id: 'LOT-2026-904',
-      medicamento: 'Insulina Glargina 100UI/ml (Solución Inyectable)',
-      laboratorio: 'Laboratorios Beta S.A. (CUIT 30-11223344-5)',
-      custodia: 'Distribuidora Logística Sur (Patente AF-892-CD)',
-      temperatura: '4.2 °C',
-      rangoExigido: '2°C a 8°C',
-      estado: 'En Tránsito',
-      hashTx: '0x3a91...f08d',
-    },
-    {
-      id: 'LOT-2026-883',
-      medicamento: 'Vacuna Neumocócica Conjugada 13-valente',
-      laboratorio: 'Laboratorio Pasteur Nac. (CUIT 30-22334455-6)',
-      custodia: 'Transporte Frío Austral (Patente AG-102-ZX)',
-      temperatura: '9.4 °C',
-      rangoExigido: '2°C a 8°C',
-      estado: 'Cuarentena',
-      hashTx: '0x884c...e219',
-    },
-    {
-      id: 'LOT-2026-871',
-      medicamento: 'Amoxicilina + Clavulánico 500mg/125mg',
-      laboratorio: 'PharmaTech Argentina (CUIT 30-33445566-7)',
-      custodia: 'Farmacia Hospitalaria Central (CUIT 30-44556677-8)',
-      temperatura: '20.1 °C',
-      rangoExigido: '15°C a 25°C',
-      estado: 'Liberado',
-      hashTx: '0x19de...77fa',
-    },
-    {
-      id: 'LOT-2026-865',
-      medicamento: 'Factor VIII Recombinante Humano',
-      laboratorio: 'Laboratorios Beta S.A. (CUIT 30-11223344-5)',
-      custodia: 'Sede Distribución Cuyo (Patente AC-442-MK)',
-      temperatura: '5.0 °C',
-      rangoExigido: '2°C a 8°C',
-      estado: 'En Tránsito',
-      hashTx: '0x9021...b81e',
-    },
-  ];
+  ngOnInit(): void {
+    this.recargar();
+  }
+
+  recargar(): void {
+    if (this.cargando || this.guardando) return;
+    this.cargando = true;
+    this.error = '';
+    forkJoin({
+      lotes: this.api.getLotes(),
+      medicamentos: this.api.getMedicamentos(),
+      organizaciones: this.api.getOrganizaciones(),
+    })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.cargando = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: ({ lotes, medicamentos, organizaciones }) => {
+          this.lotes = lotes;
+          this.medicamentos = medicamentos;
+          this.laboratorios = organizaciones.filter((org) => org.tipo === 'LABORATORIO');
+          this.cargando = false;
+        },
+        error: (err: unknown) => {
+          this.error = mensajeApi(err);
+          this.cargando = false;
+        },
+      });
+  }
+
+  crear(form?: NgForm): void {
+    if (this.guardando || this.cargando) return;
+    this.error = '';
+    this.mensaje = '';
+    if (
+      !this.nuevo.codigoLote.trim() ||
+      this.nuevo.codigoLote.trim().length > 80 ||
+      !this.medicamentos.some((m) => m.id === this.nuevo.medicamentoId) ||
+      !this.laboratorios.some((l) => l.id === this.nuevo.laboratorioId)
+    ) {
+      this.error = 'Completá código, medicamento y laboratorio.';
+      return;
+    }
+    if (
+      this.nuevo.tempMin != null &&
+      this.nuevo.tempMax != null &&
+      this.nuevo.tempMin > this.nuevo.tempMax
+    ) {
+      this.error = 'La temperatura mínima no puede superar la máxima.';
+      return;
+    }
+    this.guardando = true;
+    this.api
+      .crearLote({
+        codigoLote: this.nuevo.codigoLote.trim(),
+        medicamentoId: Number(this.nuevo.medicamentoId),
+        laboratorioId: Number(this.nuevo.laboratorioId),
+        tempMin: this.nuevo.tempMin,
+        tempMax: this.nuevo.tempMax,
+        fechaHoraFabricacion: this.nuevo.fechaHoraFabricacion || null,
+      })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.guardando = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (lote) => {
+          this.mensaje = `Lote ${lote.codigoLote} creado en estado ${lote.estado}.`;
+          this.nuevo = {
+            codigoLote: '',
+            medicamentoId: null,
+            laboratorioId: null,
+            tempMin: null,
+            tempMax: null,
+            fechaHoraFabricacion: '',
+          };
+          form?.resetForm(this.nuevo);
+          this.guardando = false;
+          this.recargar();
+        },
+        error: (err: unknown) => {
+          this.error = mensajeApi(err);
+          this.guardando = false;
+        },
+      });
+  }
 }
