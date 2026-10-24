@@ -1,0 +1,95 @@
+<section class="comp-page">
+  <app-page-header
+    title="Comprobar lote"
+    subtitle="Continuidad del encadenamiento de hashes de custodia (verificación local, no criptográfica)"
+    icon="fact_check"
+  ></app-page-header>
+
+  <mat-card class="card-busqueda">
+    <mat-card-content>
+      <form class="form-codigo" (ngSubmit)="buscar()">
+        <mat-form-field appearance="outline" class="campo-codigo">
+          <mat-label>Código de lote</mat-label>
+          <input matInput name="codigoLote" [(ngModel)]="codigoLote" placeholder="Ej.: LOTE-2024-001" autocomplete="off" />
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="buscando() || !codigoLote.trim()">
+          Comprobar
+        </button>
+      </form>
+
+      <app-loading-overlay [loading]="buscando()" message="Comprobando…"></app-loading-overlay>
+
+      @if (error()) {
+        <p class="error-texto" role="alert">{{ error() }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (lote(); as l) {
+    <mat-card class="card-lote">
+      <mat-card-content>
+        <h3>{{ l.codigoLote }} <app-status-badge [estado]="l.estado"></app-status-badge></h3>
+        @if (l.medicamentoNombre) {
+          <p class="medicamento">{{ l.medicamentoNombre }}</p>
+        }
+
+        @if (grupos().length === 0) {
+          <p class="sin-despachos">Este lote todavía no tiene despachos registrados.</p>
+        } @else {
+          @for (g of grupos(); track g.despacho.id) {
+            <div class="bloque-despacho">
+              <div class="cabecera-despacho">
+                <strong>Despacho {{ g.despacho.numeroRemito }}</strong>
+                <app-status-badge [estado]="g.despacho.estado"></app-status-badge>
+
+                @if (g.resultado.ok) {
+                  <span class="resultado resultado-ok">
+                    <mat-icon>check_circle</mat-icon>
+                    Continuidad correcta
+                  </span>
+                } @else if (g.resultado.noVerificable) {
+                  <span class="resultado resultado-no-verificable">
+                    <mat-icon>help</mat-icon>
+                    No verificable (falta algún hash)
+                  </span>
+                } @else {
+                  <span class="resultado resultado-ruptura">
+                    <mat-icon>error</mat-icon>
+                    Ruptura en el evento #{{ (g.resultado.indiceRuptura ?? 0) + 1 }}
+                  </span>
+                }
+              </div>
+
+              @if (g.eventos.length === 0) {
+                <p class="sin-despachos">Sin eventos de custodia registrados para este despacho.</p>
+              } @else {
+                <ol class="lista-eventos">
+                  @for (e of g.eventos; track e.id; let i = $index) {
+                    <li [class.evento-roto]="g.resultado.indiceRuptura === i">
+                      <div class="evento-tipo">
+                        <strong>{{ e.tipo }}</strong>
+                        <span class="evento-fecha">{{ e.fechaHoraEvento | fechaAr }}</span>
+                      </div>
+                      <div class="hashes">
+                        <button type="button" class="hash-chip" (click)="copiarHash(e.hashAnterior)" [title]="e.hashAnterior || ''">
+                          <mat-icon>content_copy</mat-icon>
+                          anterior: {{ truncarHash(e.hashAnterior) }}
+                        </button>
+                        <button type="button" class="hash-chip" (click)="copiarHash(e.hashEvento)" [title]="e.hashEvento || ''">
+                          <mat-icon>content_copy</mat-icon>
+                          evento: {{ truncarHash(e.hashEvento) }}
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ol>
+              }
+            </div>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <app-registros-demo-panel></app-registros-demo-panel>
+</section>

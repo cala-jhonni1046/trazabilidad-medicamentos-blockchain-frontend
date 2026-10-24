@@ -1,0 +1,60 @@
+.rep-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aviso-solo-lectura {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.card-filtros {
+  margin-bottom: 4px;
+}
+
+.form-filtros {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.tabla-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.tabla-rep {
+  width: 100%;
+  min-width: 720px;
+}
+
+.celda-motivo {
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.85rem;
+}
+
+.celda-acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .form-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

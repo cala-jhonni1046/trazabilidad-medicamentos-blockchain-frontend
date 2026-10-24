@@ -1,0 +1,80 @@
+<section class="farm-page">
+  <app-page-header
+    title="Dashboard de Control en Farmacia"
+    subtitle="Inventario derivado de las recepciones de tu farmacia"
+    icon="local_pharmacy"
+  >
+    <a mat-flat-button color="primary" routerLink="/dispensacion" actions>
+      <mat-icon>point_of_sale</mat-icon>
+      Ir a dispensar
+    </a>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    MVP académico: no hay verificación clínica ni autenticación real.
+  </p>
+
+  <app-loading-overlay [loading]="cargando()" message="Calculando inventario…"></app-loading-overlay>
+
+  @if (!cargando()) {
+    @if (error()) {
+      <app-error-alert [message]="error()" (retry)="cargar()"></app-error-alert>
+    } @else {
+      <div class="tarjetas" role="group" aria-label="Resumen de inventario">
+        <mat-card class="tarjeta">
+          <mat-icon>inventory_2</mat-icon>
+          <div>
+            <span class="valor">{{ disponibles() }}</span>
+            <span class="etiqueta">Unidades disponibles</span>
+          </div>
+        </mat-card>
+        <mat-card class="tarjeta">
+          <mat-icon>task_alt</mat-icon>
+          <div>
+            <span class="valor">{{ dispensadas() }}</span>
+            <span class="etiqueta">Unidades dispensadas</span>
+          </div>
+        </mat-card>
+        <mat-card class="tarjeta">
+          <mat-icon>science</mat-icon>
+          <div>
+            <span class="valor">{{ lotesRecibidosCount() }}</span>
+            <span class="etiqueta">Lotes recibidos</span>
+          </div>
+        </mat-card>
+      </div>
+
+      @if (inventario().length === 0) {
+        <app-empty-state
+          icon="inventory"
+          title="Todavía no hay unidades en tu inventario"
+          description="Aparecerán acá una vez que se registre una recepción conforme de un despacho."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-wrap">
+          <table mat-table [dataSource]="inventario()" class="tabla-inv">
+            <ng-container matColumnDef="qr">
+              <th mat-header-cell *matHeaderCellDef>Código QR</th>
+              <td mat-cell *matCellDef="let i">{{ i.codigoQr }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lote">
+              <th mat-header-cell *matHeaderCellDef>Lote</th>
+              <td mat-cell *matCellDef="let i">{{ i.codigoLote }}</td>
+            </ng-container>
+            <ng-container matColumnDef="medicamento">
+              <th mat-header-cell *matHeaderCellDef>Medicamento</th>
+              <td mat-cell *matCellDef="let i">{{ i.medicamentoNombre || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let i"><app-status-badge [estado]="i.estado"></app-status-badge></td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      }
+    }
+  }
+</section>

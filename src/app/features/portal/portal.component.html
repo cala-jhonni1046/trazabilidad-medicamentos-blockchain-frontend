@@ -1,0 +1,181 @@
+<div class="portal-page">
+  <!-- Banner aviso académico -->
+  <div class="demo-ribbon" role="alert" aria-live="polite">
+    <mat-icon class="ribbon-icon">science</mat-icon>
+    <span>
+      <strong>Portal público de MediChain</strong> — Demostración académica. No certifica autenticidad
+      sanitaria oficial ni se conecta a una blockchain distribuida real.
+    </span>
+  </div>
+
+  <header class="portal-header">
+    <div class="brand">
+      <mat-icon class="brand-icon">health_and_safety</mat-icon>
+      <div>
+        <h1>MediChain</h1>
+        <p>Portal Público de Autenticidad del Medicamento</p>
+      </div>
+    </div>
+    <a mat-stroked-button routerLink="/login" class="link-staff">
+      <mat-icon>login</mat-icon>
+      Soy personal autorizado
+    </a>
+  </header>
+
+  <main class="portal-contenido">
+    <mat-card class="card-busqueda">
+      <mat-card-content>
+        <h2>Verificar un medicamento</h2>
+        <p class="subtitulo">Ingresá el código QR impreso en la caja para ver su información de trazabilidad.</p>
+
+        <form class="form-qr" (ngSubmit)="consultar()">
+          <mat-form-field appearance="outline" class="campo-qr">
+            <mat-label>Código QR</mat-label>
+            <input
+              matInput
+              name="codigoQr"
+              [(ngModel)]="codigoQr"
+              placeholder="Ej.: QR-UNIT-001"
+              autocomplete="off"
+            />
+            <mat-icon matPrefix>qr_code_2</mat-icon>
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit" [disabled]="consultando || !codigoQr.trim()">
+            @if (consultando) {
+              Consultando…
+            } @else {
+              Verificar
+            }
+          </button>
+        </form>
+
+        <app-loading-overlay [loading]="consultando" message="Consultando…"></app-loading-overlay>
+
+        @if (errorConsulta) {
+          <p class="error-consulta" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            {{ errorConsulta }}
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (reporteConfirmadoId(); as id) {
+      <mat-card class="card-confirmacion" role="status">
+        <mat-card-content>
+          <mat-icon>check_circle</mat-icon>
+          <span>Reporte <strong>#{{ id }}</strong> enviado. Gracias por avisarnos.</span>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (resultado(); as r) {
+      <mat-card class="card-resultado">
+        <mat-card-content>
+          <div class="resultado-encabezado" [ngClass]="resumenDe(r).clase">
+            <mat-icon>{{ resumenDe(r).icono }}</mat-icon>
+            <div>
+              <strong>{{ resumenDe(r).label }}</strong>
+              <p class="qr-consultado">QR consultado: {{ r.codigoConsultado }} · Estado: {{ r.estadoUnidad }}</p>
+            </div>
+          </div>
+
+          @if (r.advertencias.length > 0) {
+            <div class="bloque-advertencias" role="alert">
+              <mat-icon>warning</mat-icon>
+              <ul>
+                @for (adv of r.advertencias; track adv) {
+                  <li>{{ adv }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (r.medicamento) {
+            <section class="bloque">
+              <h3>Medicamento</h3>
+              <p>
+                <strong>{{ r.medicamento.nombre }}</strong> · Principio activo:
+                {{ r.medicamento.principioActivo }}
+                @if (r.medicamento.requiereCadenaFrio) {
+                  <span class="chip-frio"><mat-icon>ac_unit</mat-icon> Requiere cadena de frío</span>
+                }
+              </p>
+            </section>
+          }
+
+          @if (r.lote) {
+            <section class="bloque">
+              <h3>Lote</h3>
+              <p>
+                Código: <strong>{{ r.lote.codigoLote }}</strong> · Estado: {{ r.lote.estadoLote }}
+                @if (r.lote.fechaFabricacion) {
+                  · Fabricado el {{ r.lote.fechaFabricacion | fechaAr: 'corto' }}
+                }
+              </p>
+            </section>
+          }
+
+          @if (r.cuarentena?.enCuarentena) {
+            <section class="bloque bloque-cuarentena">
+              <h3>Cuarentena</h3>
+              <p>
+                {{ r.cuarentena?.resumen || 'El lote está en cuarentena.' }}
+                @if (r.cuarentena?.fechaInicio) {
+                  · Desde {{ r.cuarentena?.fechaInicio | fechaAr: 'corto' }}
+                }
+              </p>
+            </section>
+          }
+
+          <section class="bloque">
+            <h3>Historial de custodia</h3>
+            @if (r.historialCustodia.length === 0) {
+              <p class="sin-datos">No hay hitos de custodia registrados todavía.</p>
+            } @else {
+              <ul class="lista-custodia">
+                @for (h of r.historialCustodia; track h.hashDemostrativo + h.fechaHoraEvento) {
+                  <li>
+                    <div class="custodia-tipo">
+                      <strong>{{ h.tipoEvento }}</strong>
+                      <span class="custodia-fecha">{{ h.fechaHoraEvento | fechaAr }}</span>
+                    </div>
+                    <p class="custodia-desc">{{ h.descripcion }}</p>
+                    <button
+                      type="button"
+                      class="hash-chip"
+                      (click)="copiarHash(h.hashDemostrativo)"
+                      [title]="h.hashDemostrativo || ''"
+                    >
+                      <mat-icon>content_copy</mat-icon>
+                      hash demostrativo: {{ truncarHash(h.hashDemostrativo) }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+
+          <p class="info-regulatoria">
+            <mat-icon>info</mat-icon>
+            {{ r.informacionRegulatoria }}
+          </p>
+
+          <div class="acciones-resultado">
+            <button mat-stroked-button color="warn" type="button" (click)="abrirReporte()">
+              <mat-icon>report_problem</mat-icon>
+              Reportar irregularidad
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    } @else if (!consultando && !errorConsulta) {
+      <div class="reporte-sin-consulta">
+        <button mat-stroked-button color="warn" type="button" (click)="abrirReporte()">
+          <mat-icon>report_problem</mat-icon>
+          Reportar una irregularidad sin consultar un QR
+        </button>
+      </div>
+    }
+  </main>
+</div>

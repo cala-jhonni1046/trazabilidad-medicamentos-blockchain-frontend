@@ -1,0 +1,67 @@
+<mat-card class="panel-registros">
+  <mat-card-header>
+    <mat-card-title>Registros demostrativos</mat-card-title>
+    <mat-card-subtitle>Metadatos declarados por un cliente, sin verificación criptográfica</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="aviso-blockchain" role="note">
+      <mat-icon>info</mat-icon>
+      No existe conexión con una blockchain distribuida. Esto es un CRUD de metadatos declarados: no
+      certifica ni ancla nada en una red real.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="form-registro">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-hash">
+        <mat-label>Hash de transacción (declarado)</mat-label>
+        <input matInput formControlName="transactionHash" placeholder="hash-de-ejemplo" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-bloque">
+        <mat-label>Bloque</mat-label>
+        <input matInput type="number" formControlName="bloque" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-firma">
+        <mat-label>Firma (declarada)</mat-label>
+        <input matInput formControlName="firma" />
+      </mat-form-field>
+      <mat-checkbox formControlName="confirmado">Confirmado</mat-checkbox>
+      <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || enviando()">
+        <mat-icon>add</mat-icon>
+        Agregar registro
+      </button>
+    </form>
+
+    @if (errorEnvio()) {
+      <p class="error-texto" role="alert">{{ errorEnvio() }}</p>
+    }
+
+    <app-loading-overlay [loading]="cargando()" message="Cargando registros…"></app-loading-overlay>
+
+    @if (!cargando()) {
+      @if (error()) {
+        <app-error-alert [message]="error()" (retry)="cargar()"></app-error-alert>
+      } @else if (registros().length === 0) {
+        <app-empty-state
+          icon="inbox"
+          title="Sin registros demostrativos todavía"
+          description="Agregá uno con el formulario de arriba."
+        ></app-empty-state>
+      } @else {
+        <ul class="lista-registros">
+          @for (r of registros(); track r.id) {
+            <li>
+              <button type="button" class="hash-chip" (click)="copiarHash(r.transactionHash)" [title]="r.transactionHash">
+                <mat-icon>content_copy</mat-icon>
+                {{ truncarHash(r.transactionHash) }}
+              </button>
+              <span class="meta">
+                Bloque {{ r.bloque ?? '—' }} ·
+                {{ r.confirmado ? 'Confirmado' : 'Sin confirmar' }} ·
+                {{ r.fechaCreacion | fechaAr: 'corto' }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
+</mat-card>

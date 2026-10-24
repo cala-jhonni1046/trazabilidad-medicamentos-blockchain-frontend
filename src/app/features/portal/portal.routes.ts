@@ -1,12 +1,10 @@
 import { Routes } from '@angular/router';
 
-// Placeholder de F00: Dev4 lo reemplaza en F30 por la pantalla real del portal ciudadano.
+/** F30: portal público, sin guard (accesible sin sesión). ROLE_HOME de PACIENTE. */
 export const PORTAL_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('../../shared/components/placeholder/placeholder.component').then(
-        (m) => m.PlaceholderComponent,
-      ),
+    title: 'Portal público · MediChain',
+    loadComponent: () => import('./portal.component').then((m) => m.PortalComponent),
   },
 ];
