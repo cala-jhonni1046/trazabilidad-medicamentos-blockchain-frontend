@@ -1,0 +1,203 @@
+<section class="medicamentos-page">
+  <app-page-header
+    title="Catálogo de medicamentos"
+    subtitle="Administración de fármacos, principios activos y cadena de frío"
+    icon="medication"
+  ></app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Catálogo de demostración académica para trazabilidad farmacéutica.
+  </p>
+
+  @if (puedeEditar()) {
+    <mat-card class="card-form">
+      <mat-card-header>
+        <mat-card-title>
+          {{ editando() ? 'Editar medicamento' : 'Registrar nuevo medicamento' }}
+        </mat-card-title>
+        @if (editando(); as e) {
+          <mat-card-subtitle>Editando {{ e.nombre }}</mat-card-subtitle>
+        }
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid" novalidate>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-nombre">
+            <mat-label>Nombre comercial</mat-label>
+            <input
+              matInput
+              formControlName="nombre"
+              maxlength="160"
+              autocomplete="off"
+              placeholder="Ej. Paracetamol 500mg, Insulina Glargina"
+            />
+            @if (form.controls.nombre.hasError('required')) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            } @else if (form.controls.nombre.hasError('maxlength')) {
+              <mat-error>No puede superar los 160 caracteres.</mat-error>
+            } @else if (form.controls.nombre.hasError('servidor')) {
+              <mat-error>{{ form.controls.nombre.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-principio">
+            <mat-label>Principio activo</mat-label>
+            <input
+              matInput
+              formControlName="principioActivo"
+              maxlength="160"
+              autocomplete="off"
+              placeholder="Ej. Paracetamol, Insulina humana"
+            />
+            @if (form.controls.principioActivo.hasError('required')) {
+              <mat-error>El principio activo es obligatorio.</mat-error>
+            } @else if (form.controls.principioActivo.hasError('maxlength')) {
+              <mat-error>No puede superar los 160 caracteres.</mat-error>
+            } @else if (form.controls.principioActivo.hasError('servidor')) {
+              <mat-error>{{ form.controls.principioActivo.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="campo-toggle">
+            <mat-slide-toggle formControlName="requiereCadenaFrio" color="primary">
+              Requiere cadena de frío
+            </mat-slide-toggle>
+            <span class="toggle-hint">
+              @if (form.controls.requiereCadenaFrio.value) {
+                Control térmico obligatorio (ej. 2°C a 8°C)
+              } @else {
+                Temperatura ambiente controlada
+              }
+            </span>
+          </div>
+
+          <div class="acciones-form">
+            <button mat-flat-button color="primary" type="submit" [disabled]="enviando()">
+              <mat-icon>{{ editando() ? 'save' : 'add_circle' }}</mat-icon>
+              {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar medicamento' }}
+            </button>
+            @if (editando()) {
+              <button mat-stroked-button type="button" (click)="cancelarEdicion()" [disabled]="enviando()">
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+
+        @if (errorForm(); as msg) {
+          <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+        }
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <p class="aviso-lectura" role="status">
+      <mat-icon>visibility</mat-icon>
+      Vista de solo lectura (ANMAT). El registro y edición de medicamentos lo realizan los laboratorios o Sede Central.
+    </p>
+  }
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>Medicamentos en catálogo</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" class="filtro-busqueda">
+          <mat-label>Buscar por nombre o principio activo</mat-label>
+          <input matInput type="search" [value]="busqueda()" (input)="onBusqueda($event)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-frio">
+          <mat-label>Conservación térmica</mat-label>
+          <mat-select [value]="filtroFrio()" (selectionChange)="filtroFrio.set($event.value)">
+            <mat-option value="TODOS">Todos los tipos</mat-option>
+            <mat-option value="CON_FRIO">Requiere cadena de frío</mat-option>
+            <mat-option value="SIN_FRIO">Temperatura ambiente</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando catálogo…"></app-loading-overlay>
+      } @else if (errorLista(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (medicamentos().length === 0) {
+        <app-empty-state
+          icon="medication"
+          title="No hay medicamentos en el catálogo"
+          [description]="puedeEditar() ? 'Registrá el primer medicamento con el formulario superior.' : 'Todavía no se han registrado medicamentos en el catálogo.'"
+        ></app-empty-state>
+      } @else if (filtrados().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ningún medicamento coincide con la búsqueda o filtro aplicado."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtrados()" class="tabla-medicamentos">
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre comercial</th>
+              <td mat-cell *matCellDef="let m" class="celda-nombre">
+                <strong>{{ m.nombre }}</strong>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="principioActivo">
+              <th mat-header-cell *matHeaderCellDef>Principio activo</th>
+              <td mat-cell *matCellDef="let m">{{ m.principioActivo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="requiereCadenaFrio">
+              <th mat-header-cell *matHeaderCellDef>Conservación</th>
+              <td mat-cell *matCellDef="let m">
+                @if (m.requiereCadenaFrio) {
+                  <span class="chip-frio chip-cadena">
+                    <mat-icon>ac_unit</mat-icon>
+                    Cadena de frío
+                  </span>
+                } @else {
+                  <span class="chip-frio chip-ambiente">
+                    <mat-icon>thermostat</mat-icon>
+                    Ambiente
+                  </span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let m" class="col-acciones">
+                <button
+                  mat-icon-button
+                  type="button"
+                  matTooltip="Editar"
+                  aria-label="Editar medicamento"
+                  [disabled]="estaProcesando(m.id)"
+                  (click)="editar(m)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  matTooltip="Eliminar"
+                  aria-label="Eliminar medicamento"
+                  [disabled]="estaProcesando(m.id)"
+                  (click)="eliminar(m)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas()"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

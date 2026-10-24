@@ -1,0 +1,199 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aviso-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Grid de métricas */
+.grid-metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.card-metrica {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .metrica-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .metrica-titulo {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .metrica-icono-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #0284c7;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .metrica-valor {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    margin: 12px 0 6px 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metrica-detalle {
+    font-size: 0.82rem;
+    color: #94a3b8;
+  }
+}
+
+/* Tabla de monitoreo */
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-dashboard {
+  width: 100%;
+  min-width: 900px;
+  background: transparent;
+}
+
+.celda-codigo {
+  font-family: monospace;
+  font-weight: 600;
+
+  .link-lote {
+    color: #0284c7;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.celda-rango {
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  color: #334155;
+}
+
+.chip-patente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.85rem;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #64748b;
+  }
+}
+
+.subtexto-remito {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.sin-asignar {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.estado-contenedor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  .aviso-cuarentena {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #fecaca;
+
+    mat-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+    }
+  }
+}
+
+.fila-cuarentena {
+  background-color: rgba(254, 242, 242, 0.4);
+
+  &:hover {
+    background-color: rgba(254, 242, 242, 0.7) !important;
+  }
+}
+
+.fila-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.col-acciones {
+  text-align: right;
+  white-space: nowrap;
+}

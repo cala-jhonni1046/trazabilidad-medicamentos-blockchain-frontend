@@ -1,0 +1,126 @@
+<section class="unidades-page">
+  <app-page-header
+    title="Unidades trazables QR"
+    subtitle="Exploración y monitoreo de unidades serializadas por lote"
+    icon="qr_code_2"
+  >
+    <div actions>
+      <a mat-flat-button color="primary" routerLink="/unidades/auditoria">
+        <mat-icon>qr_code_scanner</mat-icon>
+        Auditoría de un QR
+      </a>
+    </div>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Simulación académica: las unidades representan envases individuales con código QR unívoco.
+  </p>
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>Padrón de unidades individuales</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" class="filtro-lote">
+          <mat-label>Filtrar por ID de Lote</mat-label>
+          <input
+            matInput
+            type="number"
+            placeholder="Todos los lotes"
+            [value]="filtroLoteId() ?? ''"
+            (change)="onLoteInput($event)"
+          />
+          <mat-icon matSuffix>filter_alt</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-estado">
+          <mat-label>Estado</mat-label>
+          <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value); cargar()">
+            <mat-option value="TODOS">Todos los estados</mat-option>
+            <mat-option value="DISPONIBLE">Disponible</mat-option>
+            <mat-option value="DISPENSADA">Dispensada</mat-option>
+            <mat-option value="BLOQUEADA">Bloqueada</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-busqueda">
+          <mat-label>Buscar por código QR</mat-label>
+          <input matInput type="search" [value]="busqueda()" (input)="onBusqueda($event)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando unidades trazables…"></app-loading-overlay>
+      } @else if (error(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (unidades().length === 0) {
+        <app-empty-state
+          icon="qr_code_2"
+          title="No hay unidades registradas"
+          description="No se encontraron unidades trazables para el filtro seleccionado."
+        ></app-empty-state>
+      } @else if (filtradas().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ninguna unidad coincide con el código QR buscado."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtradas()" class="tabla-unidades">
+            <ng-container matColumnDef="codigoQr">
+              <th mat-header-cell *matHeaderCellDef>Código QR</th>
+              <td mat-cell *matCellDef="let u" class="celda-qr">
+                <code>{{ u.codigoQr }}</code>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="loteId">
+              <th mat-header-cell *matHeaderCellDef>Lote asociado</th>
+              <td mat-cell *matCellDef="let u">
+                <a [routerLink]="['/lotes', u.loteId]" class="link-lote">
+                  Lote #{{ u.loteId }}
+                </a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let u">
+                <app-status-badge [estado]="u.estado"></app-status-badge>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fechaCreacion">
+              <th mat-header-cell *matHeaderCellDef>Alta</th>
+              <td mat-cell *matCellDef="let u">
+                {{ u.fechaCreacion | fechaAr: 'corto' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Auditoría</th>
+              <td mat-cell *matCellDef="let u" class="col-acciones">
+                <a
+                  mat-stroked-button
+                  color="primary"
+                  [routerLink]="['/unidades/auditoria']"
+                  [queryParams]="{ qr: u.codigoQr }"
+                >
+                  <mat-icon>timeline</mat-icon>
+                  Auditar
+                </a>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

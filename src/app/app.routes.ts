@@ -4,7 +4,6 @@ import { authGuard } from './core/session/auth.guards';
 
 // Pantallas legadas — se mantienen hasta que cada dueño las migre (F11, F13, F20)
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { LotesComponent } from './pages/lotes/lotes.component';
 import { TrazabilidadComponent } from './pages/trazabilidad/trazabilidad.component';
 
 export const routes: Routes = [
@@ -32,7 +31,11 @@ export const routes: Routes = [
 
       // ── LEGACY: pantallas existentes (no borrar hasta migración) ───────
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'lotes', component: LotesComponent },
+      {
+        path: 'lotes',
+        loadChildren: () =>
+          import('./features/lotes/lotes.routes').then((m) => m.LOTES_ROUTES),
+      },
       { path: 'trazabilidad', component: TrazabilidadComponent },
 
       // ── Features por lazy loading (UN loadChildren por feature) ────────

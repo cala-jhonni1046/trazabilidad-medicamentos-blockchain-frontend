@@ -1,0 +1,134 @@
+<section class="lotes-page">
+  <app-page-header
+    title="Lotes de producción"
+    subtitle="Control de lotes fabricados, rangos térmicos y unidades trazables"
+    icon="inventory_2"
+  >
+    <div actions *ngIf="esLaboratorio()">
+      <a mat-flat-button color="primary" routerLink="/lotes/nuevo">
+        <mat-icon>add_box</mat-icon>
+        Crear Lote
+      </a>
+    </div>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Sistema de trazabilidad académica. Los lotes y unidades son datos de prueba.
+  </p>
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>
+        {{ esLaboratorio() ? 'Lotes de mi laboratorio' : 'Todos los lotes del sistema' }}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" class="filtro-busqueda">
+          <mat-label>Buscar por código, medicamento o laboratorio</mat-label>
+          <input matInput type="search" [value]="busqueda()" (input)="onBusqueda($event)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-estado">
+          <mat-label>Estado</mat-label>
+          <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+            <mat-option value="">Todos los estados</mat-option>
+            <mat-option value="CREADO">Creado</mat-option>
+            <mat-option value="EN_TRANSITO">En tránsito</mat-option>
+            <mat-option value="RECIBIDO">Recibido</mat-option>
+            <mat-option value="EN_CUARENTENA">En cuarentena</mat-option>
+            <mat-option value="LIBERADO">Liberado</mat-option>
+            <mat-option value="CERRADO">Cerrado</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando lotes…"></app-loading-overlay>
+      } @else if (error(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (lotes().length === 0) {
+        <app-empty-state
+          icon="inventory_2"
+          title="No hay lotes registrados"
+          [description]="esLaboratorio() ? 'Iniciá la producción creando tu primer lote.' : 'No se han registrado lotes todavía.'"
+          [actionLabel]="esLaboratorio() ? 'Crear Lote' : undefined"
+          (action)="cargar()"
+        ></app-empty-state>
+      } @else if (filtrados().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ningún lote coincide con los criterios de búsqueda o filtro."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtrados()" class="tabla-lotes">
+            <ng-container matColumnDef="codigoLote">
+              <th mat-header-cell *matHeaderCellDef>Código de lote</th>
+              <td mat-cell *matCellDef="let l" class="celda-codigo">
+                <a [routerLink]="['/lotes', l.id]" class="link-detalle">
+                  {{ l.codigoLote }}
+                </a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="medicamento">
+              <th mat-header-cell *matHeaderCellDef>Medicamento</th>
+              <td mat-cell *matCellDef="let l">
+                {{ l.medicamentoNombre || ('Medicamento #' + l.medicamentoId) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="laboratorio">
+              <th mat-header-cell *matHeaderCellDef>Laboratorio</th>
+              <td mat-cell *matCellDef="let l">
+                {{ l.laboratorioNombre || ('Lab #' + l.laboratorioId) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="rango">
+              <th mat-header-cell *matHeaderCellDef>Rango térmico</th>
+              <td mat-cell *matCellDef="let l" class="celda-rango">
+                {{ formatoRango(l) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fabricacion">
+              <th mat-header-cell *matHeaderCellDef>Fabricación</th>
+              <td mat-cell *matCellDef="let l">
+                {{ l.fechaHoraFabricacion | fechaAr: 'corto' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let l">
+                <app-status-badge [estado]="l.estado"></app-status-badge>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let l" class="col-acciones">
+                <a
+                  mat-icon-button
+                  [routerLink]="['/lotes', l.id]"
+                  matTooltip="Ver detalle y unidades"
+                  aria-label="Ver detalle del lote"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </a>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>
