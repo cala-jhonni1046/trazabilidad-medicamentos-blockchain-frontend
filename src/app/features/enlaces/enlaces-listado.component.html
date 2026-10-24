@@ -1,0 +1,127 @@
+<section class="pagina">
+  <app-page-header
+    title="Licencias y CUITs"
+    subtitle="Todas las cadenas solicitadas y su estado de habilitación"
+    icon="verified"
+  ></app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Un enlace CUIT es un dato demostrativo; no es una habilitación legal verificada. Vista de solo lectura.
+  </p>
+
+  <mat-card>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filtro-busqueda">
+          <mat-label>Buscar por CUIT o nombre</mat-label>
+          <input matInput type="search" [value]="busqueda()" (input)="onBusqueda($event)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filtro-estado">
+          <mat-label>Estado</mat-label>
+          <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+            <mat-option value="">Todos</mat-option>
+            @for (s of estados; track s) {
+              <mat-option [value]="s">{{ s === 'PENDIENTE' ? 'Pendiente' : s === 'ACTIVO' ? 'Activo' : 'Rechazado' }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" (click)="cargar()" [disabled]="cargando()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+        @if (esAnmat()) {
+          <a mat-stroked-button routerLink="/enlaces/pendientes">
+            <mat-icon>pending_actions</mat-icon>
+            Solicitudes pendientes
+          </a>
+        }
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando enlaces…"></app-loading-overlay>
+      } @else if (error(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (enlaces().length === 0) {
+        <app-empty-state
+          icon="link_off"
+          title="Todavía no hay enlaces"
+          description="Cuando un laboratorio presente una cadena, va a aparecer acá."
+        ></app-empty-state>
+      } @else if (filtrados().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ningún enlace coincide con el filtro o la búsqueda."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtrados()" class="tabla-enlaces">
+            <ng-container matColumnDef="cadena">
+              <th mat-header-cell *matHeaderCellDef>Cadena</th>
+              <td mat-cell *matCellDef="let e">
+                <div class="paso"><strong>{{ e.laboratorioNombre }}</strong> <span class="sub">{{ formatearCuit(e.laboratorioCuit) }}</span></div>
+                <div class="paso">→ {{ e.distribuidorNombre }} <span class="sub">{{ formatearCuit(e.distribuidorCuit) }}</span></div>
+                <div class="paso">→ {{ e.farmaciaNombre }} <span class="sub">{{ formatearCuit(e.farmaciaCuit) }}</span></div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="disposicion">
+              <th mat-header-cell *matHeaderCellDef>Disposición</th>
+              <td mat-cell *matCellDef="let e">{{ e.numeroDisposicionANMAT || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let e">
+                <app-status-badge [estado]="e.estado"></app-status-badge>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="solicitada">
+              <th mat-header-cell *matHeaderCellDef>Solicitada</th>
+              <td mat-cell *matCellDef="let e">{{ e.fechaSolicitud | fechaAr }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="resolucion">
+              <th mat-header-cell *matHeaderCellDef>Resolución</th>
+              <td mat-cell *matCellDef="let e">
+                @if (e.estado === 'ACTIVO') {
+                  {{ e.fechaAprobacionANMAT | fechaAr }}
+                  <span class="sub bloque">Aprobó: {{ e.inspectorAprobadorNombre || '—' }}</span>
+                } @else if (e.estado === 'RECHAZADO') {
+                  Rechazado
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="certificado">
+              <th mat-header-cell *matHeaderCellDef>Certificado</th>
+              <td mat-cell *matCellDef="let e">
+                @if (urlSegura(e.documentoCertificadoUrl); as url) {
+                  <a [href]="url" target="_blank" rel="noopener noreferrer">Abrir</a>
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+        @if (hayRechazados()) {
+          <p class="nota" role="note">
+            <mat-icon>info</mat-icon>
+            El contrato actual no registra quién rechaza ni cuándo: los enlaces rechazados se muestran sin inspector ni fecha.
+          </p>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

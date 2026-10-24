@@ -1,0 +1,114 @@
+<section class="pagina">
+  <app-page-header
+    title="Solicitudes pendientes"
+    subtitle="Enlaces CUIT esperando la resolución de ANMAT"
+    icon="pending_actions"
+  ></app-page-header>
+
+  @if (motivoBloqueo(); as motivo) {
+    <p class="aviso-bloqueo" role="alert">
+      <mat-icon>lock</mat-icon>
+      {{ motivo }}
+    </p>
+  }
+
+  <div class="barra">
+    <a mat-stroked-button routerLink="/enlaces">
+      <mat-icon>verified</mat-icon>
+      Ver todos los enlaces
+    </a>
+    <button mat-stroked-button type="button" (click)="cargar()" [disabled]="cargando()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <app-loading-overlay [loading]="true" message="Cargando solicitudes…"></app-loading-overlay>
+  } @else if (error(); as msg) {
+    <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+  } @else if (pendientes().length === 0) {
+    <app-empty-state
+      icon="task_alt"
+      title="No hay solicitudes pendientes"
+      description="Cuando un laboratorio presente una cadena, va a aparecer acá."
+    ></app-empty-state>
+  } @else {
+    <ul class="lista">
+      @for (e of pendientes(); track e.id) {
+        <li>
+          <mat-card class="solicitud">
+            <mat-card-content>
+              <div class="cadena" aria-label="Cadena solicitada">
+                <div class="nodo">
+                  <span class="rol">Laboratorio</span>
+                  <strong>{{ e.laboratorioNombre }}</strong>
+                  <span class="cuit">{{ formatearCuit(e.laboratorioCuit) }}</span>
+                </div>
+                <mat-icon class="flecha" aria-hidden="true">arrow_forward</mat-icon>
+                <div class="nodo">
+                  <span class="rol">Distribuidor</span>
+                  <strong>{{ e.distribuidorNombre }}</strong>
+                  <span class="cuit">{{ formatearCuit(e.distribuidorCuit) }}</span>
+                </div>
+                <mat-icon class="flecha" aria-hidden="true">arrow_forward</mat-icon>
+                <div class="nodo">
+                  <span class="rol">Farmacia</span>
+                  <strong>{{ e.farmaciaNombre }}</strong>
+                  <span class="cuit">{{ formatearCuit(e.farmaciaCuit) }}</span>
+                </div>
+              </div>
+
+              <dl class="datos">
+                <div>
+                  <dt>Disposición ANMAT</dt>
+                  <dd>{{ e.numeroDisposicionANMAT || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Certificado</dt>
+                  <dd>
+                    @if (urlSegura(e.documentoCertificadoUrl); as url) {
+                      <a [href]="url" target="_blank" rel="noopener noreferrer">Abrir certificado</a>
+                    } @else {
+                      {{ e.documentoCertificadoUrl ? 'URL no válida' : '—' }}
+                    }
+                  </dd>
+                </div>
+                <div>
+                  <dt>Solicitada</dt>
+                  <dd>{{ e.fechaSolicitud | fechaAr }}</dd>
+                </div>
+              </dl>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <span [matTooltip]="motivoBloqueo()" [matTooltipDisabled]="puedeResolver()">
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  [disabled]="!puedeResolver() || estaProcesando(e.id)"
+                  (click)="resolver(e, 'rechazar')"
+                >
+                  <mat-icon>close</mat-icon>
+                  Rechazar
+                </button>
+              </span>
+              <span [matTooltip]="motivoBloqueo()" [matTooltipDisabled]="puedeResolver()">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="!puedeResolver() || estaProcesando(e.id)"
+                  (click)="resolver(e, 'aprobar')"
+                >
+                  <mat-icon>check</mat-icon>
+                  Aprobar
+                </button>
+              </span>
+            </mat-card-actions>
+          </mat-card>
+        </li>
+      }
+    </ul>
+  }
+</section>

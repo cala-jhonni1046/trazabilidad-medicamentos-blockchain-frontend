@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -14,6 +14,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { SessionService } from '../core/session/session.service';
 import { getMenuForRole, MenuItem } from '../core/navigation/menu.registry';
 import { getRoleHome } from '../core/navigation/role-home';
+import { PendientesEnlacesService } from '../features/enlaces/pendientes.store';
 
 @Component({
   selector: 'app-main-layout',
@@ -37,6 +38,7 @@ export class MainLayoutComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly pendientes = inject(PendientesEnlacesService);
 
   readonly isMobile = signal(false);
   readonly isSidenavOpen = signal(true);
@@ -72,6 +74,11 @@ export class MainLayoutComponent {
       const mobile = result.matches;
       this.isMobile.set(mobile);
       this.isSidenavOpen.set(!mobile);
+    });
+
+    // El badge "Solicitudes pendientes" del menú de ANMAT se carga al ingresar.
+    effect(() => {
+      if (this.session.rol() === 'ANMAT') this.pendientes.refrescar();
     });
   }
 
