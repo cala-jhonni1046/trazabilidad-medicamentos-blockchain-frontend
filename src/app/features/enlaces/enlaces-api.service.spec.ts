@@ -41,4 +41,13 @@ describe('EnlacesApiService', () => {
     api.listar().subscribe();
     expect(http.expectOne((r) => r.url === '/api/enlaces-cuit').request.params.keys().length).toBe(0);
   });
+
+  it('aprueba y rechaza con POST a /aprobar y /rechazar', () => {
+    api.aprobar(5, { inspectorId: 9, numeroDisposicionANMAT: 'D-1' }).subscribe();
+    const a = http.expectOne('/api/enlaces-cuit/5/aprobar');
+    expect(a.request.method).toBe('POST');
+    expect(a.request.body).toEqual({ inspectorId: 9, numeroDisposicionANMAT: 'D-1' });
+    api.rechazar(5, { inspectorId: 9 }).subscribe();
+    expect(http.expectOne('/api/enlaces-cuit/5/rechazar').request.method).toBe('POST');
+  });
 });

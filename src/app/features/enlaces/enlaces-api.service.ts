@@ -1,7 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { EnlaceDto, EnlaceRequest, EstadoEnlace, OrganizacionLite } from './enlaces.models';
+import {
+  EnlaceDto,
+  EnlaceRequest,
+  EnlaceResolucionRequest,
+  EstadoEnlace,
+  OrganizacionLite,
+} from './enlaces.models';
 
 @Injectable({ providedIn: 'root' })
 export class EnlacesApiService {
@@ -15,6 +21,18 @@ export class EnlacesApiService {
 
   crear(body: EnlaceRequest): Observable<EnlaceDto> {
     return this.http.post<EnlaceDto>(this.base, body);
+  }
+
+  obtener(id: number): Observable<EnlaceDto> {
+    return this.http.get<EnlaceDto>(`${this.base}/${id}`);
+  }
+
+  aprobar(id: number, body: EnlaceResolucionRequest): Observable<EnlaceDto> {
+    return this.http.post<EnlaceDto>(`${this.base}/${id}/aprobar`, body);
+  }
+
+  rechazar(id: number, body: EnlaceResolucionRequest): Observable<EnlaceDto> {
+    return this.http.post<EnlaceDto>(`${this.base}/${id}/rechazar`, body);
   }
 
   /**

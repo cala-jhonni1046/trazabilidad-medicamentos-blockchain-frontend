@@ -70,3 +70,17 @@ export interface Resolucion {
   org?: OrganizacionLite;
   mensaje?: string;
 }
+
+/** Refleja EnlaceResolucionRequestDTO (aprobar y rechazar). */
+export interface EnlaceResolucionRequest {
+  inspectorId: number;
+  numeroDisposicionANMAT?: string | null;
+  documentoCertificadoUrl?: string | null;
+}
+
+/** Solo se enlazan URLs http(s): el backend guarda texto libre y no se debe renderizar javascript:. */
+export function urlSegura(url: string | null | undefined): string | null {
+  return url && /^https?:\/\/\S+$/i.test(url.trim()) ? url.trim() : null;
+}
+
+export const ESTADOS_ENLACE: EstadoEnlace[] = ['PENDIENTE', 'ACTIVO', 'RECHAZADO'];

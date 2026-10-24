@@ -1,0 +1,95 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.aviso-bloqueo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cadena {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.nodo {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 180px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(100, 116, 139, 0.08);
+
+  .rol {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+  }
+
+  .cuit {
+    font-size: 0.85rem;
+    color: #475569;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.flecha {
+  color: #94a3b8;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 24px;
+  margin: 16px 0 0;
+
+  dt {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    font-weight: 500;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 720px) {
+  .flecha {
+    transform: rotate(90deg);
+    margin: 0 auto;
+  }
+
+  .datos {
+    grid-template-columns: 1fr;
+  }
+}
