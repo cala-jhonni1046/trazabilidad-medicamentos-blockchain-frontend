@@ -94,13 +94,5 @@ export class MedicamentosApiService {
   }
 }
 
-export function mensajeApi(error: unknown): string {
-  if (error instanceof HttpErrorResponse) {
-    if (error.status === 0) return 'No se pudo conectar con el backend. Revisá que esté iniciado y que el proxy esté configurado.';
-    const body = error.error as { message?: string; fieldErrors?: { field: string; message: string }[] } | null;
-    if (body?.fieldErrors?.length) return body.fieldErrors.map((item) => `${item.field}: ${item.message}`).join(' · ');
-    if (body?.message) return body.message;
-    return `La solicitud falló (HTTP ${error.status}).`;
-  }
-  return 'No se pudo completar la solicitud.';
-}
+export { mensajeApi } from './http/api-error';
+

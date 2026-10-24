@@ -1,10 +1,11 @@
 <div class="layout-wrapper">
+  <!-- Ribbon aviso académico -->
   <div class="test-environment-ribbon">
     <mat-icon class="ribbon-icon">science</mat-icon>
-    <span class="ribbon-text">MVP ACADÉMICO — DATOS DEL BACKEND LOCAL — SIN AUTENTICACIÓN</span>
+    <span class="ribbon-text">MVP ACADÉMICO — SESIÓN SIMULADA SIN AUTENTICACIÓN REAL</span>
   </div>
 
-  <!-- Barra superior (Encabezado) -->
+  <!-- Barra superior -->
   <mat-toolbar class="main-header">
     <div class="header-left">
       <button
@@ -29,16 +30,33 @@
     <span class="toolbar-spacer"></span>
 
     <div class="header-right">
-      <div class="role-badge">
-        <mat-icon class="role-icon">science</mat-icon>
-        <span class="role-name">Uso demostrativo</span>
+      <!-- Info de la sesión actual -->
+      <div class="session-info" *ngIf="session.usuario() as u">
+        <div class="session-details">
+          <span class="session-email">{{ u.email }}</span>
+          <span class="session-rol">{{ rolLabel() }}</span>
+          <span class="session-org" *ngIf="session.organizacion() as org">
+            · {{ org.nombre }}
+          </span>
+        </div>
       </div>
+
+      <!-- Botón cerrar sesión -->
+      <button
+        mat-icon-button
+        (click)="cerrarSesion()"
+        aria-label="Cerrar sesión"
+        matTooltip="Cerrar sesión"
+        class="logout-btn"
+      >
+        <mat-icon>logout</mat-icon>
+      </button>
     </div>
   </mat-toolbar>
 
-  <!-- Contenedor Sidenav Adaptable -->
+  <!-- Contenedor Sidenav -->
   <mat-sidenav-container class="sidenav-container">
-    <!-- Barra lateral izquierda -->
+    <!-- Barra lateral -->
     <mat-sidenav
       #sidenav
       [mode]="isMobile() ? 'over' : 'side'"
@@ -49,16 +67,34 @@
         <span class="nav-section-title">MENÚ PRINCIPAL</span>
       </div>
 
+      <!-- Sesión resumida en sidebar (mobile) -->
+      <div class="sidebar-session" *ngIf="isMobile() && session.usuario() as u">
+        <mat-icon class="sess-icon">account_circle</mat-icon>
+        <div>
+          <span class="sess-email">{{ u.email }}</span>
+          <span class="sess-rol">{{ rolLabel() }}</span>
+        </div>
+      </div>
+
       <mat-nav-list class="nav-list">
         <a
           mat-list-item
-          *ngFor="let item of navItems"
+          *ngFor="let item of navItems()"
           [routerLink]="item.path"
           routerLinkActive="active-nav-link"
           (click)="onNavItemClick()"
           class="nav-link"
+          [attr.aria-label]="item.title"
         >
-          <mat-icon matListItemIcon class="nav-item-icon">{{ item.icon }}</mat-icon>
+          <mat-icon
+            matListItemIcon
+            class="nav-item-icon"
+            [matBadge]="badgeCount(item) || null"
+            matBadgeColor="warn"
+            matBadgeSize="small"
+          >
+            {{ item.icon }}
+          </mat-icon>
           <span matListItemTitle class="nav-item-title">{{ item.title }}</span>
         </a>
       </mat-nav-list>
@@ -66,13 +102,13 @@
       <div class="sidebar-footer">
         <div class="footer-card">
           <div class="footer-badge">MVP ACADÉMICO</div>
-          <p class="footer-note">Consulta al backend</p>
+          <p class="footer-note">Datos del backend local</p>
           <span class="footer-version">Sin blockchain distribuida</span>
         </div>
       </div>
     </mat-sidenav>
 
-    <!-- Cuerpo / Contenido principal -->
+    <!-- Contenido principal -->
     <mat-sidenav-content class="main-content-area">
       <main class="content-inner">
         <router-outlet></router-outlet>
