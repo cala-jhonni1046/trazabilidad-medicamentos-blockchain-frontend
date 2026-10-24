@@ -1,0 +1,203 @@
+<section class="auditoria-page">
+  <app-page-header
+    title="Auditoría integral de unidad QR"
+    subtitle="Reconstrucción del histórico, custodia demostrativa, cuarentenas y dispensación"
+    icon="qr_code_scanner"
+  ></app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Los hashes de custodia son demostrativos (no prueban una blockchain distribuida). Por privacidad, no se exponen datos personales de pacientes en la dispensación.
+  </p>
+
+  <!-- Buscador de QR -->
+  <mat-card class="card-buscador">
+    <mat-card-content>
+      <form (ngSubmit)="buscar()" class="form-busqueda" role="search">
+        <mat-form-field appearance="outline" class="campo-qr">
+          <mat-label>Código QR o número serial de la unidad</mat-label>
+          <input
+            matInput
+            [formControl]="qrControl"
+            placeholder="Ej. MED-LOT2026-0001, QR-10492"
+            autocomplete="off"
+          />
+          <mat-icon matPrefix>qr_code</mat-icon>
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="btn-buscar"
+          [disabled]="cargando() || qrControl.invalid"
+        >
+          <mat-icon>search</mat-icon>
+          Buscar y auditar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (cargando()) {
+    <app-loading-overlay [loading]="true" message="Reconstruyendo historial y consultando eventos de custodia…"></app-loading-overlay>
+  } @else if (error(); as msg) {
+    <app-error-alert [message]="msg" (retry)="buscar()"></app-error-alert>
+  } @else if (qrNoEncontrado(); as noExiste) {
+    <div class="alerta-no-encontrado" role="alert">
+      <mat-icon>search_off</mat-icon>
+      <div>
+        <strong>No se encontró la unidad</strong>
+        <p>No existe ningún registro asociado al código QR <code>{{ noExiste }}</code>. Verificá que el código sea correcto.</p>
+      </div>
+    </div>
+  } @else if (historial(); as h) {
+    <!-- Resumen de la unidad -->
+    <div class="grid-resumen">
+      <mat-card class="card-dato">
+        <span class="etiqueta">Código QR auditado</span>
+        <div class="valor-qr">
+          <mat-icon>qr_code_2</mat-icon>
+          <code>{{ h.unidad.codigoQr }}</code>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Estado actual de la unidad</span>
+        <div class="valor">
+          <app-status-badge [estado]="h.unidad.estado"></app-status-badge>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Lote asignado</span>
+        <div class="valor">
+          <a [routerLink]="['/lotes', h.unidad.loteId]" class="link-lote">
+            {{ h.lote?.codigoLote || ('Lote #' + h.unidad.loteId) }}
+          </a>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Medicamento</span>
+        <div class="valor">
+          <strong>{{ h.lote?.medicamentoNombre || 'No disponible' }}</strong>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Laboratorio fabricante</span>
+        <div class="valor">
+          {{ h.lote?.laboratorioNombre || 'No disponible' }}
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Rango térmico</span>
+        <div class="valor">
+          @if (h.lote?.tempMin != null && h.lote?.tempMax != null) {
+            {{ h.lote?.tempMin }}°C a {{ h.lote?.tempMax }}°C
+          } @else {
+            Ambiente
+          }
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Verificación de hitos -->
+    <mat-card class="card-hitos">
+      <mat-card-header>
+        <mat-card-title>Recorrido del ciclo de vida</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="badges-hitos">
+          <span class="hito-chip hito-ok">
+            <mat-icon>check_circle</mat-icon>
+            Fabricación
+          </span>
+          <span class="hito-chip" [class.hito-ok]="tienePaso('DESPACHO')" [class.hito-pendiente]="!tienePaso('DESPACHO')">
+            <mat-icon>{{ tienePaso('DESPACHO') ? 'check_circle' : 'schedule' }}</mat-icon>
+            {{ tienePaso('DESPACHO') ? 'Despacho registrado' : 'Despacho: No registrado' }}
+          </span>
+          @if (tienePaso('CUARENTENA')) {
+            <span class="hito-chip hito-alerta">
+              <mat-icon>warning</mat-icon>
+              Intervención ANMAT (Cuarentena)
+            </span>
+          }
+          <span class="hito-chip" [class.hito-ok]="tienePaso('RECEPCION')" [class.hito-pendiente]="!tienePaso('RECEPCION')">
+            <mat-icon>{{ tienePaso('RECEPCION') ? 'check_circle' : 'schedule' }}</mat-icon>
+            {{ tienePaso('RECEPCION') ? 'Recepción en farmacia' : 'Recepción: No registrada' }}
+          </span>
+          <span class="hito-chip" [class.hito-ok]="tienePaso('DISPENSACION')" [class.hito-pendiente]="!tienePaso('DISPENSACION')">
+            <mat-icon>{{ tienePaso('DISPENSACION') ? 'check_circle' : 'schedule' }}</mat-icon>
+            {{ tienePaso('DISPENSACION') ? 'Dispensada' : 'Dispensación: No registrada' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Línea de tiempo -->
+    <mat-card class="card-timeline">
+      <mat-card-header>
+        <mat-card-title>Línea de tiempo cronológica</mat-card-title>
+        <mat-card-subtitle>
+          Total de {{ h.pasos.length }} hitos y eventos registrados en el recorrido de la unidad
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (h.pasos.length === 0) {
+          <app-empty-state
+            icon="timeline"
+            title="Sin eventos registrados"
+            description="No se registran eventos asociados a este lote o unidad."
+          ></app-empty-state>
+        } @else {
+          <div class="timeline-container">
+            @for (paso of h.pasos; track $index) {
+              <div class="timeline-item" [class.timeline-cuarentena]="paso.esCuarentena">
+                <div class="timeline-marker">
+                  <div class="marker-circle" [class.circle-cuarentena]="paso.esCuarentena">
+                    <mat-icon>{{ iconoPaso(paso) }}</mat-icon>
+                  </div>
+                  @if ($index < h.pasos.length - 1) {
+                    <div class="marker-line"></div>
+                  }
+                </div>
+
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <span class="timeline-fecha">{{ paso.fecha | fechaAr: 'completo' }}</span>
+                    @if (paso.estado) {
+                      <app-status-badge [estado]="paso.estado"></app-status-badge>
+                    }
+                  </div>
+
+                  <h3 class="timeline-titulo">{{ paso.titulo }}</h3>
+                  <p class="timeline-detalle">{{ paso.detalle }}</p>
+
+                  @if (paso.hashDemostrativo) {
+                    <div class="hash-box">
+                      <span class="hash-label">
+                        <mat-icon>fingerprint</mat-icon>
+                        Hash de custodia (demostrativo):
+                      </span>
+                      <code>{{ paso.hashDemostrativo }}</code>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <app-empty-state
+      icon="qr_code_scanner"
+      title="Búsqueda de unidad trazable"
+      description="Ingresá o pegá un código QR para auditar su historia completa desde la fabricación hasta la dispensación."
+    ></app-empty-state>
+  }
+</section>

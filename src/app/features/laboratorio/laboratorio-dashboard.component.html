@@ -1,0 +1,185 @@
+<section class="dashboard-page">
+  <app-page-header
+    title="Dashboard Analítico del Fabricante"
+    [subtitle]="'Monitoreo centralizado · ' + (lab()?.nombre || 'Laboratorio') + (lab()?.cuit ? ' (CUIT ' + lab()?.cuit + ')' : '')"
+    icon="science"
+  >
+    <div actions class="header-actions">
+      <a mat-stroked-button routerLink="/telemetria/mapa" matTooltip="Ver mapa de telemetría en tiempo real (F22)">
+        <mat-icon>location_on</mat-icon>
+        Monitoreo GPS
+      </a>
+      <a mat-flat-button color="primary" routerLink="/lotes/nuevo">
+        <mat-icon>add_box</mat-icon>
+        Crear nuevo lote
+      </a>
+    </div>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Demostración académica: las métricas y el monitoreo se calculan con datos reales del laboratorio autenticado.
+  </p>
+
+  @if (error(); as msg) {
+    <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+  }
+
+  @if (cargando()) {
+    <app-loading-overlay [loading]="true" message="Calculando indicadores del laboratorio…"></app-loading-overlay>
+  } @else {
+    <!-- Tarjetas de métricas -->
+    <div class="grid-metricas">
+      @for (m of metricas(); track m.titulo) {
+        <mat-card class="card-metrica">
+          <div class="metrica-header">
+            <span class="metrica-titulo">{{ m.titulo }}</span>
+            <div class="metrica-icono-box">
+              <mat-icon>{{ m.icono }}</mat-icon>
+            </div>
+          </div>
+          <div class="metrica-valor">
+            {{ m.valor !== null ? m.valor : '—' }}
+          </div>
+          <span class="metrica-detalle">{{ m.detalle }}</span>
+        </mat-card>
+      }
+    </div>
+
+    <!-- Tabla de Monitoreo de Lotes, Patentes y Enlaces -->
+    <mat-card class="card-monitoreo">
+      <mat-card-header>
+        <mat-card-title>Monitoreo de lotes, patentes y enlaces CUIT</mat-card-title>
+        <mat-card-subtitle>
+          Estado logístico de producción, cadena de frío y transporte asignado
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (filas().length === 0) {
+          <app-empty-state
+            icon="inventory_2"
+            title="No hay lotes para monitorear"
+            description="Comenzá registrando el primer lote de producción en el catálogo."
+            actionLabel="Crear lote"
+            (action)="cargar()"
+          ></app-empty-state>
+        } @else {
+          <div class="tabla-scroll">
+            <table mat-table [dataSource]="filas()" class="tabla-dashboard">
+              <ng-container matColumnDef="codigo">
+                <th mat-header-cell *matHeaderCellDef>Código de lote</th>
+                <td mat-cell *matCellDef="let f" class="celda-codigo">
+                  <a [routerLink]="['/lotes', f.lote.id]" class="link-lote">
+                    {{ f.lote.codigoLote }}
+                  </a>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="medicamento">
+                <th mat-header-cell *matHeaderCellDef>Medicamento</th>
+                <td mat-cell *matCellDef="let f">
+                  {{ f.lote.medicamentoNombre || ('Medicamento #' + f.lote.medicamentoId) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="rango">
+                <th mat-header-cell *matHeaderCellDef>Rango térmico</th>
+                <td mat-cell *matCellDef="let f" class="celda-rango">
+                  {{ formatoRango(f.lote) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="patente">
+                <th mat-header-cell *matHeaderCellDef>Patente / Remito</th>
+                <td mat-cell *matCellDef="let f">
+                  @if (f.despacho?.patente || f.despacho?.patenteVehiculo) {
+                    <span class="chip-patente">
+                      <mat-icon>directions_car</mat-icon>
+                      {{ f.despacho.patente || f.despacho.patenteVehiculo }}
+                    </span>
+                  } @else if (f.despacho?.numeroRemito) {
+                    <span class="subtexto-remito">Remito #{{ f.despacho.numeroRemito }}</span>
+                  } @else {
+                    <span class="sin-asignar">Sin despacho</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="transportista">
+                <th mat-header-cell *matHeaderCellDef>Transportista (CUIT)</th>
+                <td mat-cell *matCellDef="let f">
+                  {{ f.despacho?.distribuidorNombre || f.enlace?.distribuidorNombre || (f.enlace?.distribuidorCuit ? 'CUIT ' + f.enlace.distribuidorCuit : '—') }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="farmaciaDestino">
+                <th mat-header-cell *matHeaderCellDef>Farmacia destino</th>
+                <td mat-cell *matCellDef="let f">
+                  {{ f.despacho?.farmaciaDestinoNombre || f.enlace?.farmaciaNombre || '—' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let f">
+                  <div class="estado-contenedor">
+                    <app-status-badge [estado]="f.lote.estado"></app-status-badge>
+                    @if (f.cuarentenaAbierta || f.lote.estado === 'EN_CUARENTENA') {
+                      <span class="aviso-cuarentena" matTooltip="Lote retenido por ANMAT">
+                        <mat-icon>warning</mat-icon>
+                        Retenido
+                      </span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="inspectorAprobador">
+                <th mat-header-cell *matHeaderCellDef>Inspector enlace</th>
+                <td mat-cell *matCellDef="let f">
+                  {{ f.enlace?.inspectorAprobadorNombre || '—' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+                <td mat-cell *matCellDef="let f" class="col-acciones">
+                  <div class="fila-acciones">
+                    <a
+                      mat-icon-button
+                      [routerLink]="['/lotes', f.lote.id]"
+                      matTooltip="Ver lote y unidades"
+                      aria-label="Ver detalle del lote"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </a>
+
+                    @if (!f.despacho) {
+                      <button
+                        mat-button
+                        color="primary"
+                        [disabled]="true"
+                        matTooltip="La asignación de transporte se habilitará con el módulo de despachos logísticos de Dev3 (F20)."
+                      >
+                        <mat-icon>local_shipping</mat-icon>
+                        Asignar transporte
+                      </button>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: columnas"
+                [class.fila-cuarentena]="row.lote.estado === 'EN_CUARENTENA' || row.cuarentenaAbierta"
+              ></tr>
+            </table>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

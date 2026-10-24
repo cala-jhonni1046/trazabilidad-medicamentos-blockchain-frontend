@@ -1,0 +1,78 @@
+.unidades-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.aviso-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 16px;
+}
+
+.filtro-lote {
+  flex: 1 1 180px;
+}
+
+.filtro-estado {
+  flex: 1 1 200px;
+}
+
+.filtro-busqueda {
+  flex: 2 1 260px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-unidades {
+  width: 100%;
+  min-width: 650px;
+  background: transparent;
+}
+
+.celda-qr {
+  code {
+    font-family: monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}
+
+.link-lote {
+  color: #0284c7;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.col-acciones {
+  text-align: right;
+  white-space: nowrap;
+}

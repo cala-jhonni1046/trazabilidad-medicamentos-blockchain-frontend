@@ -1,0 +1,151 @@
+<section class="lote-nuevo-page">
+  <app-page-header
+    title="Crear nuevo lote"
+    subtitle="Registrar producción y generar unidades trazables con código QR"
+    icon="add_box"
+  >
+    <div actions>
+      <a mat-stroked-button routerLink="/lotes">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a lotes
+      </a>
+    </div>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Simulación académica: las unidades QR creadas se almacenan como identificadores trazables.
+  </p>
+
+  <mat-card class="card-form">
+    <mat-card-header>
+      <mat-card-title>Datos de producción del lote</mat-card-title>
+      <mat-card-subtitle>
+        Laboratorio fabricante: <strong>{{ lab()?.nombre || 'Laboratorio no identificado' }}</strong>
+        @if (lab()?.cuit) {
+          <span> (CUIT {{ lab()?.cuit }})</span>
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (cargandoMedicamentos()) {
+        <app-loading-overlay [loading]="true" message="Cargando catálogo de medicamentos…"></app-loading-overlay>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid" novalidate>
+        <!-- Medicamento -->
+        <mat-form-field appearance="outline" class="campo-full">
+          <mat-label>Fármaco / Medicamento</mat-label>
+          <mat-select formControlName="medicamentoId">
+            @for (m of medicamentos(); track m.id) {
+              <mat-option [value]="m.id">
+                {{ m.nombre }} ({{ m.principioActivo }})
+                {{ m.requiereCadenaFrio ? '· [Cadena de frío]' : '' }}
+              </mat-option>
+            }
+          </mat-select>
+          @if (form.controls.medicamentoId.hasError('required')) {
+            <mat-error>Seleccioná un medicamento del catálogo.</mat-error>
+          }
+          <mat-hint>
+            ¿No encontrás el medicamento?
+            <a routerLink="/medicamentos" class="link-catalogo">Ir al catálogo de medicamentos</a>
+          </mat-hint>
+        </mat-form-field>
+
+        @if (medicamentoSeleccionado(); as med) {
+          @if (med.requiereCadenaFrio) {
+            <div class="alerta-frio campo-full">
+              <mat-icon>ac_unit</mat-icon>
+              <span>Este medicamento requiere cadena de frío. Verificá el rango térmico (recomendado: 2.0°C a 8.0°C).</span>
+            </div>
+          }
+        }
+
+        <!-- Código de lote -->
+        <mat-form-field appearance="outline" class="campo-codigo">
+          <mat-label>Código de lote</mat-label>
+          <input
+            matInput
+            formControlName="codigoLote"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="Ej. LOT-2026-001, VAC-FL-8823"
+          />
+          @if (form.controls.codigoLote.hasError('required')) {
+            <mat-error>El código de lote es obligatorio.</mat-error>
+          } @else if (form.controls.codigoLote.hasError('duplicado')) {
+            <mat-error>{{ form.controls.codigoLote.getError('duplicado') }}</mat-error>
+          } @else if (form.controls.codigoLote.hasError('servidor')) {
+            <mat-error>{{ form.controls.codigoLote.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Cantidad de unidades QR -->
+        <mat-form-field appearance="outline" class="campo-unidades">
+          <mat-label>Cantidad de unidades QR a generar</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="cantidadUnidades"
+            min="1"
+            max="1000"
+            step="1"
+          />
+          <mat-hint>Entre 1 y 1000 unidades trazables</mat-hint>
+          @if (form.controls.cantidadUnidades.hasError('required')) {
+            <mat-error>Ingresá la cantidad de unidades.</mat-error>
+          } @else if (form.controls.cantidadUnidades.hasError('min') || form.controls.cantidadUnidades.hasError('max')) {
+            <mat-error>La cantidad debe estar entre 1 y 1000 unidades.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Rango térmico: tempMin y tempMax -->
+        <mat-form-field appearance="outline" class="campo-temp">
+          <mat-label>Temperatura mínima (°C)</mat-label>
+          <input matInput type="number" step="0.5" formControlName="tempMin" placeholder="2.0" />
+          @if (form.controls.tempMin.hasError('rangoInvalido')) {
+            <mat-error>{{ form.controls.tempMin.getError('rangoInvalido') }}</mat-error>
+          } @else if (form.controls.tempMin.hasError('requiereFrio')) {
+            <mat-error>{{ form.controls.tempMin.getError('requiereFrio') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="campo-temp">
+          <mat-label>Temperatura máxima (°C)</mat-label>
+          <input matInput type="number" step="0.5" formControlName="tempMax" placeholder="8.0" />
+        </mat-form-field>
+
+        <!-- Fecha de fabricación -->
+        <mat-form-field appearance="outline" class="campo-fecha">
+          <mat-label>Fecha y hora de fabricación</mat-label>
+          <input matInput type="datetime-local" formControlName="fechaHoraFabricacion" />
+          @if (form.controls.fechaHoraFabricacion.hasError('required')) {
+            <mat-error>La fecha de fabricación es requerida.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Acciones -->
+        <div class="acciones-form">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="enviando() || cargandoMedicamentos()"
+          >
+            <mat-icon>{{ enviando() ? 'sync' : 'verified' }}</mat-icon>
+            {{ enviando() ? 'Creando lote y generando QR…' : 'Crear lote y generar unidades' }}
+          </button>
+          <a mat-stroked-button routerLink="/lotes" [disabled]="enviando()">
+            Cancelar
+          </a>
+        </div>
+      </form>
+
+      @if (errorGeneral(); as msg) {
+        <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

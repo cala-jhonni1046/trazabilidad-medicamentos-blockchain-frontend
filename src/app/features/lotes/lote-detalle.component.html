@@ -1,0 +1,207 @@
+<section class="lote-detalle-page">
+  @if (cargando()) {
+    <app-loading-overlay [loading]="true" message="Cargando información del lote…"></app-loading-overlay>
+  } @else if (error(); as msg) {
+    <app-page-header title="Detalle de lote" icon="inventory_2">
+      <div actions>
+        <a mat-stroked-button routerLink="/lotes">
+          <mat-icon>arrow_back</mat-icon>
+          Volver a lotes
+        </a>
+      </div>
+    </app-page-header>
+    <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+  } @else if (lote(); as l) {
+    <app-page-header
+      [title]="'Lote ' + l.codigoLote"
+      [subtitle]="(l.medicamentoNombre || 'Medicamento #' + l.medicamentoId) + ' · Fabricado por ' + (l.laboratorioNombre || 'Lab #' + l.laboratorioId)"
+      icon="inventory_2"
+    >
+      <div actions class="header-actions-wrap">
+        <!-- Asignar transporte (F20): deshabilitado con aviso explícito -->
+        <button
+          mat-flat-button
+          color="accent"
+          [disabled]="true"
+          matTooltip="La asignación de transporte se habilitará con el módulo de logística y despachos (F20)."
+        >
+          <mat-icon>local_shipping</mat-icon>
+          Asignar transporte
+        </button>
+
+        @if (puedeEliminar()) {
+          <button
+            mat-stroked-button
+            color="warn"
+            type="button"
+            [disabled]="eliminando()"
+            (click)="eliminarLote()"
+          >
+            <mat-icon>delete</mat-icon>
+            {{ eliminando() ? 'Eliminando…' : 'Eliminar lote' }}
+          </button>
+        }
+
+        <a mat-stroked-button routerLink="/lotes">
+          <mat-icon>arrow_back</mat-icon>
+          Volver a lotes
+        </a>
+      </div>
+    </app-page-header>
+
+    <p class="aviso-demo" role="note">
+      <mat-icon>info</mat-icon>
+      Trazabilidad académica: los códigos QR generados son identificadores demostrativos para auditoría.
+    </p>
+
+    <!-- Aviso si falló o está pendiente la generación de unidades -->
+    @if (errorGeneracion() || unidades().length === 0) {
+      <div class="alerta-generacion" role="alert">
+        <mat-icon>warning</mat-icon>
+        <div class="alerta-texto">
+          <strong>Generación de unidades pendiente</strong>
+          <p>Este lote no tiene unidades trazables registradas. Podés generar sus códigos QR ahora.</p>
+        </div>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="generando()"
+          (click)="generarUnidades(50)"
+        >
+          <mat-icon>{{ generando() ? 'sync' : 'qr_code' }}</mat-icon>
+          {{ generando() ? 'Generando…' : 'Reintentar generación (50 unidades)' }}
+        </button>
+      </div>
+    }
+
+    <!-- Ficha técnica del lote -->
+    <div class="grid-resumen">
+      <mat-card class="card-dato">
+        <span class="etiqueta">Estado actual</span>
+        <div class="valor">
+          <app-status-badge [estado]="l.estado"></app-status-badge>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Fármaco / Medicamento</span>
+        <div class="valor">
+          <strong>{{ l.medicamentoNombre || ('ID ' + l.medicamentoId) }}</strong>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Control térmico</span>
+        <div class="valor valor-destacado">
+          <mat-icon>thermostat</mat-icon>
+          <span>{{ formatoRango(l) }}</span>
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Fecha de fabricación</span>
+        <div class="valor">
+          {{ l.fechaHoraFabricacion | fechaAr: 'corto' }}
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Laboratorio fabricante</span>
+        <div class="valor">
+          {{ l.laboratorioNombre || ('ID ' + l.laboratorioId) }}
+          @if (l.laboratorioCuit) {
+            <span class="subtexto">CUIT {{ l.laboratorioCuit }}</span>
+          }
+        </div>
+      </mat-card>
+
+      <mat-card class="card-dato">
+        <span class="etiqueta">Total unidades trazables</span>
+        <div class="valor">
+          <strong>{{ unidades().length }}</strong> unidades generadas
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Tabla de unidades QR -->
+    <mat-card class="card-unidades">
+      <mat-card-header>
+        <mat-card-title>Unidades trazables con código QR</mat-card-title>
+        <mat-card-subtitle>
+          Listado de las unidades individuales generadas para este lote
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (unidades().length > 0) {
+          <div class="filtros-unidades">
+            <mat-form-field appearance="outline" class="filtro-qr">
+              <mat-label>Filtrar por código QR</mat-label>
+              <input matInput type="search" [value]="busquedaQr()" (input)="onBusquedaQr($event)" />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+          </div>
+
+          @if (unidadesFiltradas().length === 0) {
+            <app-empty-state
+              icon="search_off"
+              title="Sin coincidencias"
+              description="No se encontraron unidades con ese código QR."
+            ></app-empty-state>
+          } @else {
+            <div class="tabla-scroll">
+              <table mat-table [dataSource]="unidadesFiltradas()" class="tabla-detalle-unidades">
+                <ng-container matColumnDef="codigoQr">
+                  <th mat-header-cell *matHeaderCellDef>Código QR / Serial</th>
+                  <td mat-cell *matCellDef="let u" class="celda-qr">
+                    <mat-icon class="icono-qr">qr_code_2</mat-icon>
+                    <code>{{ u.codigoQr }}</code>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef>Estado</th>
+                  <td mat-cell *matCellDef="let u">
+                    <app-status-badge [estado]="u.estado"></app-status-badge>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="fechaCreacion">
+                  <th mat-header-cell *matHeaderCellDef>Alta</th>
+                  <td mat-cell *matCellDef="let u">
+                    {{ u.fechaCreacion | fechaAr: 'corto' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef class="col-acciones">Auditoría</th>
+                  <td mat-cell *matCellDef="let u" class="col-acciones">
+                    <a
+                      mat-button
+                      color="primary"
+                      [routerLink]="['/unidades/auditoria']"
+                      [queryParams]="{ qr: u.codigoQr }"
+                    >
+                      <mat-icon>timeline</mat-icon>
+                      Ver historial
+                    </a>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnasUnidades"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnasUnidades"></tr>
+              </table>
+            </div>
+          }
+        } @else {
+          <app-empty-state
+            icon="qr_code_2"
+            title="Sin unidades generadas"
+            description="Este lote no cuenta con unidades QR asignadas actualmente."
+          ></app-empty-state>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>
