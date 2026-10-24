@@ -31,6 +31,10 @@ import { getRoleHome } from '../../../core/navigation/role-home';
             <mat-icon>home</mat-icon>
             Ir al inicio de mi rol
           </button>
+          <button mat-stroked-button type="button" (click)="cerrarSesion()" *ngIf="session.isAuthenticated()">
+            <mat-icon>logout</mat-icon>
+            Cerrar sesión
+          </button>
         </div>
       </mat-card>
     </div>
@@ -98,6 +102,8 @@ import { getRoleHome } from '../../../core/navigation/role-home';
       .actions {
         display: flex;
         justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
       }
     `,
   ],
@@ -109,5 +115,10 @@ export class PlaceholderComponent {
   irAInicio(): void {
     const rol = this.session.rol();
     this.router.navigate([getRoleHome(rol)]);
+  }
+
+  cerrarSesion(): void {
+    this.session.cerrarSesion();
+    this.router.navigate(['/login']);
   }
 }
