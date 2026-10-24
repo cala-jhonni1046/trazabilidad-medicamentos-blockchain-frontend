@@ -82,6 +82,7 @@
           *ngFor="let item of navItems()"
           [routerLink]="item.path"
           routerLinkActive="active-nav-link"
+          [routerLinkActiveOptions]="{ exact: soloExacto(item) }"
           (click)="onNavItemClick()"
           class="nav-link"
           [attr.aria-label]="item.title"

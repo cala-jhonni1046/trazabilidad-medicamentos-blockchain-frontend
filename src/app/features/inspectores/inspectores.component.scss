@@ -1,0 +1,120 @@
+.insp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #0ea5e9;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .valor {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .etiqueta {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+}
+
+.aviso-metricas,
+.aviso-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.banner-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+.fila-modo,
+.campo-ancho,
+.acciones-form {
+  grid-column: 1 / -1;
+}
+
+.acciones-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-insp {
+  width: 100%;
+  min-width: 720px;
+  background: transparent;
+
+  .sub {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+}
+
+.col-acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .tarjetas,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

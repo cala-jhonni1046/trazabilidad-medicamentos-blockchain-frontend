@@ -44,6 +44,15 @@ export class MainLayoutComponent {
   /** Ítems filtrados por el rol de la sesión */
   readonly navItems = computed<MenuItem[]>(() => getMenuForRole(this.session.rol()));
 
+  /**
+   * Un ítem cuya ruta es el prefijo de otro ítem del menú (por ejemplo /inspectores y
+   * /inspectores/auditoria) solo se marca activo con coincidencia exacta; así no quedan
+   * dos ítems resaltados a la vez.
+   */
+  soloExacto(item: MenuItem): boolean {
+    return this.navItems().some((otro) => otro !== item && otro.path.startsWith(item.path + '/'));
+  }
+
   /** Label legible del rol */
   readonly rolLabel = computed(() => {
     const rol = this.session.rol();
