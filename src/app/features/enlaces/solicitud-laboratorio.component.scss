@@ -1,0 +1,56 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.exito {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+
+  mat-icon {
+    color: #059669;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin: 16px 0;
+}
+
+.filtro-estado {
+  flex: 0 1 220px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-enlaces {
+  width: 100%;
+  min-width: 760px;
+  background: transparent;
+
+  .sub {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+}

@@ -1,0 +1,114 @@
+<form [formGroup]="form" (ngSubmit)="enviar()" class="solicitud-form" novalidate>
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Un enlace CUIT es un dato demostrativo; no es una habilitación legal verificada.
+  </p>
+
+  @for (slot of slots; track slot.key) {
+    <div class="slot">
+      <div class="slot-fila">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="slot-campo">
+          <mat-label>{{ slot.label }}</mat-label>
+          <input
+            matInput
+            [formControlName]="slot.key"
+            [attr.data-slot]="slot.key"
+            inputmode="numeric"
+            maxlength="13"
+            autocomplete="off"
+            placeholder="XX-XXXXXXXX-X"
+            (input)="alEditar(slot)"
+            (blur)="buscar(slot)"
+          />
+          @if (esFijo(slot)) {
+            <mat-hint>Fijado a tu organización.</mat-hint>
+          }
+          @if (form.controls[slot.key].hasError('required')) {
+            <mat-error>El CUIT es obligatorio.</mat-error>
+          } @else if (form.controls[slot.key].hasError('cuitInvalido')) {
+            <mat-error>{{ form.controls[slot.key].getError('cuitInvalido') }}</mat-error>
+          }
+        </mat-form-field>
+        @if (!esFijo(slot)) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="btn-buscar"
+            [disabled]="resoluciones()[slot.key].estado === 'buscando'"
+            (click)="buscar(slot, true)"
+          >
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+        }
+      </div>
+
+      @switch (resoluciones()[slot.key].estado) {
+        @case ('buscando') {
+          <p class="slot-estado" role="status">Buscando…</p>
+        }
+        @case ('ok') {
+          <div class="slot-ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <span>
+              <strong>{{ resoluciones()[slot.key].org?.nombre }}</strong>
+              · {{ tipoLabels[slot.tipo] }}
+              · {{ formatearCuit(resoluciones()[slot.key].org?.cuit) }}
+            </span>
+          </div>
+        }
+        @case ('error') {
+          <div class="slot-error" role="alert">
+            <mat-icon>error</mat-icon>
+            <span>{{ resoluciones()[slot.key].mensaje }}</span>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Número de disposición ANMAT</mat-label>
+    <input matInput formControlName="numeroDisposicionANMAT" maxlength="80" autocomplete="off" />
+    @if (form.controls.numeroDisposicionANMAT.hasError('servidor')) {
+      <mat-error>{{ form.controls.numeroDisposicionANMAT.getError('servidor') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>URL del certificado</mat-label>
+    <input
+      matInput
+      type="url"
+      formControlName="documentoCertificadoUrl"
+      maxlength="500"
+      autocomplete="off"
+      placeholder="https://…"
+    />
+    <mat-hint>Enlace de texto: el sistema no carga archivos.</mat-hint>
+    @if (form.controls.documentoCertificadoUrl.hasError('pattern')) {
+      <mat-error>Ingresá una URL que empiece con http:// o https://.</mat-error>
+    } @else if (form.controls.documentoCertificadoUrl.hasError('servidor')) {
+      <mat-error>{{ form.controls.documentoCertificadoUrl.getError('servidor') }}</mat-error>
+    }
+  </mat-form-field>
+
+  @if (errorEnvio(); as msg) {
+    <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+  }
+
+  <div class="acciones">
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="enviando() || !todosResueltos() || form.invalid"
+    >
+      <mat-icon>send</mat-icon>
+      {{ enviando() ? 'Enviando…' : 'Enviar solicitud' }}
+    </button>
+    @if (!todosResueltos()) {
+      <span class="ayuda">Buscá y confirmá los tres CUIT para poder enviar.</span>
+    }
+  </div>
+</form>
