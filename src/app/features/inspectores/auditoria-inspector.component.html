@@ -1,0 +1,87 @@
+<section class="audit-page">
+  <app-page-header
+    title="Auditar inspector por DNI"
+    subtitle="Consulta de la ficha de habilitación de un inspector ANMAT"
+    icon="manage_search"
+  ></app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Los datos personales del MVP son ficticios; no cargar datos reales.
+  </p>
+
+  <mat-card>
+    <mat-card-content>
+      <form class="form-busqueda" [formGroup]="form" (ngSubmit)="buscar()" novalidate>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-dni">
+          <mat-label>DNI del inspector</mat-label>
+          <input
+            matInput
+            formControlName="dni"
+            inputmode="numeric"
+            maxlength="10"
+            autocomplete="off"
+            placeholder="11.222.333"
+          />
+          <mat-hint>7 u 8 dígitos, con o sin puntos</mat-hint>
+          @if (dni.hasError('required')) {
+            <mat-error>Ingresá un DNI.</mat-error>
+          } @else if (dni.hasError('dniInvalido')) {
+            <mat-error>{{ dni.getError('dniInvalido') }}</mat-error>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="buscando()">
+          <mat-icon>search</mat-icon>
+          {{ buscando() ? 'Buscando…' : 'Auditar' }}
+        </button>
+        <a mat-stroked-button routerLink="/inspectores">Volver a inspectores</a>
+      </form>
+
+      @if (error(); as msg) {
+        <app-error-alert [message]="msg" (retry)="buscar()"></app-error-alert>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (resultado(); as r) {
+    <mat-card class="ficha" aria-live="polite">
+      <mat-card-header>
+        <mat-card-title>{{ r.nombreCompleto }}</mat-card-title>
+        <mat-card-subtitle>Ficha del inspector</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="datos">
+          <div>
+            <dt>Estado</dt>
+            <dd><app-status-badge [estado]="r.estado"></app-status-badge></dd>
+          </div>
+          <div>
+            <dt>Legajo oficial</dt>
+            <dd>{{ r.legajoOficial || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Email institucional</dt>
+            <dd>{{ r.emailInstitucional || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Fecha y hora de alta</dt>
+            <dd>{{ r.fechaHoraAlta | fechaAr }}</dd>
+          </div>
+          <div>
+            <dt>Autorizado por</dt>
+            <dd>{{ r.jefeAutorizador || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Usuario asociado</dt>
+            <dd>{{ r.usuarioEmail || '—' }}</dd>
+          </div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+  } @else if (consultado()) {
+    <mat-card class="sin-resultado" role="status">
+      <mat-icon>person_off</mat-icon>
+      <p>No se encontró ningún inspector con ese DNI.</p>
+    </mat-card>
+  }
+</section>

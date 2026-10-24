@@ -1,0 +1,92 @@
+.solicitud-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.aviso-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.slot-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.slot-campo {
+  flex: 1 1 auto;
+}
+
+.btn-buscar {
+  height: 56px;
+}
+
+.slot-ok,
+.slot-error,
+.slot-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.slot-ok {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+
+  mat-icon {
+    color: #059669;
+  }
+}
+
+.slot-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+
+  mat-icon {
+    color: #dc2626;
+  }
+}
+
+.slot-estado {
+  color: #64748b;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.ayuda {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+@media (max-width: 560px) {
+  .slot-fila {
+    flex-direction: column;
+  }
+
+  .btn-buscar {
+    height: 44px;
+    align-self: flex-start;
+  }
+}

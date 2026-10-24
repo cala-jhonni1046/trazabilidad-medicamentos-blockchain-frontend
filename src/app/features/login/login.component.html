@@ -1,0 +1,178 @@
+<div class="login-page">
+  <!-- Banner aviso académico -->
+  <div class="demo-ribbon" role="alert" aria-live="polite">
+    <mat-icon class="ribbon-icon">science</mat-icon>
+    <span>
+      <strong>Sesión simulada</strong> — Sin autenticación real. MVP académico. No ingreses datos personales reales.
+    </span>
+  </div>
+
+  <div class="login-wrapper">
+    <!-- Cabecera con marca -->
+    <div class="brand-header">
+      <div class="brand-icon">
+        <mat-icon>health_and_safety</mat-icon>
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">MediChain</h1>
+        <p class="brand-sub">Trazabilidad Farmacéutica · Demo Académica</p>
+      </div>
+    </div>
+
+    <mat-card class="login-card">
+      <mat-card-header>
+        <mat-card-title>Seleccionar usuario</mat-card-title>
+        <mat-card-subtitle>Elegí un usuario del seed para simular el ingreso</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+
+        <!-- Estado de carga -->
+        <div *ngIf="cargando()" class="loading-box">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando usuarios del backend...</span>
+        </div>
+
+        <!-- Error general / backend caído -->
+        <div *ngIf="!cargando() && errorGeneral()" class="error-box" role="alert">
+          <mat-icon class="err-icon">error_outline</mat-icon>
+          <div>
+            <p class="err-msg">{{ errorGeneral() }}</p>
+            <p class="err-hint" *ngIf="errorGeneral()?.includes('conectar')">
+              Verificá que el backend Spring Boot esté corriendo en
+              <code>http://localhost:8080</code> con el perfil <code>demo</code>.
+            </p>
+            <button mat-stroked-button color="warn" (click)="cargarUsuarios()" class="retry-btn">
+              <mat-icon>refresh</mat-icon>
+              Reintentar
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista vacía -->
+        <div *ngIf="!cargando() && !errorGeneral() && usuariosActivos().length === 0" class="empty-box">
+          <mat-icon class="empty-icon">group_off</mat-icon>
+          <p>No hay usuarios activos registrados.</p>
+          <p class="empty-hint">
+            Iniciá el backend con el perfil <strong>demo</strong> para cargar el seed de usuarios.
+          </p>
+        </div>
+
+        <!-- Selección principal -->
+        <div *ngIf="!cargando() && !errorGeneral() && usuariosActivos().length > 0" class="form-section">
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Usuario</mat-label>
+            <mat-select id="select-usuario" [ngModel]="usuarioSeleccionado()" (ngModelChange)="onUsuarioChange($event)"
+              [compareWith]="comparar">
+              <mat-select-trigger>
+                {{ usuarioSeleccionado()?.email }}
+              </mat-select-trigger>
+              <mat-option *ngFor="let u of usuariosActivos()" [value]="u">
+                <div class="option-content">
+                  <mat-icon class="opt-icon">{{ getRolIcon(u.rol) }}</mat-icon>
+                  <span class="opt-label">
+                    <strong>{{ u.email }}</strong>
+                    <span class="opt-rol">{{ getRolLabel(u.rol) }}</span>
+                  </span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-hint>Elegí un usuario del seed del backend</mat-hint>
+          </mat-form-field>
+
+          <!-- Tarjeta del usuario seleccionado -->
+          <div *ngIf="usuarioSeleccionado() as sel" class="user-card">
+            <div class="uc-icon-wrap" [attr.data-rol]="sel.rol">
+              <mat-icon>{{ getRolIcon(sel.rol) }}</mat-icon>
+            </div>
+            <div class="uc-info">
+              <span class="uc-email">{{ sel.email }}</span>
+              <span class="uc-rol">{{ getRolLabel(sel.rol) }}</span>
+            </div>
+          </div>
+
+          <!-- Selector de organización (para LABORATORIO, DISTRIBUIDOR, FARMACIA) -->
+          <div *ngIf="necesitaOrganizacion()" class="org-section">
+            <mat-divider></mat-divider>
+
+            <p class="section-label">
+              <mat-icon>business</mat-icon>
+              Seleccionar organización de trabajo
+            </p>
+
+            <div *ngIf="organizacionesFiltradas().length === 0" class="warn-box" role="alert">
+              <mat-icon>warning</mat-icon>
+              <span>
+                No hay organizaciones registradas del tipo
+                <strong>{{ usuarioSeleccionado()?.rol }}</strong>.
+                Pedí a Sede Central que la registre antes de ingresar.
+              </span>
+            </div>
+
+            <mat-form-field *ngIf="organizacionesFiltradas().length > 0" appearance="outline" class="full-width">
+              <mat-label>Organización</mat-label>
+              <mat-select id="select-organizacion" [ngModel]="organizacionSeleccionada()"
+                (ngModelChange)="onOrganizacionChange($event)" [compareWith]="comparar">
+                <mat-option *ngFor="let o of organizacionesFiltradas()" [value]="o">
+                  {{ o.nombre }} ({{ o.cuit }})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <div *ngIf="errorOrg()" class="error-inline" role="alert">
+              <mat-icon>error</mat-icon>{{ errorOrg() }}
+            </div>
+          </div>
+
+          <!-- Resolución inspector para ANMAT -->
+          <div *ngIf="usuarioSeleccionado()?.rol === 'ANMAT'" class="inspector-section">
+            <mat-divider></mat-divider>
+            <p class="section-label">
+              <mat-icon>verified_user</mat-icon>
+              Perfil de inspector ANMAT
+            </p>
+
+            <div *ngIf="cargandoInspector()" class="loading-inline">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Verificando perfil de inspector...</span>
+            </div>
+
+            <div *ngIf="!cargandoInspector() && inspectorResuelto() as insp" class="inspector-card">
+              <mat-icon class="insp-icon" [class.suspendido]="inspectorSuspendido()">
+                {{ inspectorSuspendido() ? 'block' : 'verified' }}
+              </mat-icon>
+              <div>
+                <p class="insp-name">{{ insp.nombreCompleto }}</p>
+                <p class="insp-detail">Legajo: {{ insp.legajoOficial ?? '—' }}</p>
+                <p *ngIf="inspectorSuspendido()" class="insp-warn" role="alert">
+                  ⚠️ Inspector SUSPENDIDO — Solo podrás acceder en modo lectura.
+                </p>
+              </div>
+            </div>
+
+            <div *ngIf="!cargandoInspector() && errorInspector()" class="error-inline" role="alert">
+              <mat-icon>error</mat-icon>{{ errorInspector() }}
+            </div>
+          </div>
+
+        </div><!-- /form-section -->
+      </mat-card-content>
+
+      <mat-card-actions align="end" class="card-actions">
+        <button mat-flat-button color="primary" id="btn-ingresar" [disabled]="!puedeIngresar()" (click)="ingresar()"
+          aria-label="Ingresar al sistema">
+          <mat-icon>login</mat-icon>
+          Ingresar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <p class="legal-note">
+      Proyecto académico — los datos son ficticios. Sin blockchain distribuida real ni autenticación oficial.
+    </p>
+  </div>
+</div>
+
+<!-- helper template para ngModel comparator -->
+<ng-template #noOp></ng-template>

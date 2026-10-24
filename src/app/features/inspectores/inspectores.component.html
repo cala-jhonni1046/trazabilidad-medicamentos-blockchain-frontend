@@ -1,0 +1,257 @@
+<section class="insp-page">
+  <app-page-header
+    title="Inspectores ANMAT"
+    subtitle="Inicio de Sede Central: habilitaciones, cadenas y organizaciones de la red"
+    icon="verified_user"
+  ></app-page-header>
+
+  <div class="tarjetas" role="group" aria-label="Métricas de la red">
+    <mat-card class="tarjeta">
+      <mat-icon>verified_user</mat-icon>
+      <div>
+        <span class="valor">{{ cargando() || errorLista() ? '…' : habilitados() }}</span>
+        <span class="etiqueta">Inspectores habilitados</span>
+      </div>
+    </mat-card>
+    <mat-card class="tarjeta">
+      <mat-icon>link</mat-icon>
+      <div>
+        <span class="valor">
+          {{ errorMetricas() ? '—' : cadenasActivas() === null ? '…' : cadenasActivas() }}
+        </span>
+        <span class="etiqueta">Cadenas activas</span>
+      </div>
+    </mat-card>
+    <mat-card class="tarjeta">
+      <mat-icon>business</mat-icon>
+      <div>
+        <span class="valor">
+          {{ errorMetricas() ? '—' : organizacionesTotal() === null ? '…' : organizacionesTotal() }}
+        </span>
+        <span class="etiqueta">Organizaciones registradas</span>
+      </div>
+    </mat-card>
+  </div>
+  @if (errorMetricas()) {
+    <p class="aviso-metricas" role="alert">
+      No se pudieron cargar todas las métricas.
+      <button mat-button type="button" (click)="cargarMetricas()">Reintentar</button>
+    </p>
+  }
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Los datos personales del MVP son ficticios; no cargar datos reales. Al no haber autenticación, el
+    DNI de los inspectores es visible para cualquier cliente del backend.
+  </p>
+
+  <mat-card class="card-form">
+    <mat-card-header>
+      <mat-card-title>Dar de alta un inspector</mat-card-title>
+      <mat-card-subtitle>El perfil se asocia a un usuario con rol ANMAT.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (usuarioSinPerfil(); as u) {
+        <div class="banner-aviso" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>
+            El usuario <strong>{{ u.email }}</strong> quedó creado, pero falta su perfil de inspector.
+            Corregí los datos y volvé a enviar: solo se reintenta el perfil.
+          </span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid" novalidate>
+        <div class="fila-modo">
+          <mat-slide-toggle
+            [checked]="modoNuevoUsuario()"
+            (change)="cambiarModo($event.checked)"
+            [disabled]="enviando()"
+          >
+            Crear un usuario ANMAT nuevo en este paso
+          </mat-slide-toggle>
+        </div>
+
+        @if (modoNuevoUsuario()) {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-ancho">
+            <mat-label>Email del nuevo usuario ANMAT</mat-label>
+            <input matInput type="email" formControlName="emailNuevo" autocomplete="off" maxlength="180" />
+            @if (form.controls.emailNuevo.hasError('required')) {
+              <mat-error>El email es obligatorio.</mat-error>
+            } @else if (form.controls.emailNuevo.hasError('email')) {
+              <mat-error>El formato de email no es válido.</mat-error>
+            } @else if (form.controls.emailNuevo.hasError('servidor')) {
+              <mat-error>{{ form.controls.emailNuevo.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-ancho">
+            <mat-label>Usuario ANMAT sin perfil</mat-label>
+            <mat-select formControlName="usuarioId">
+              @for (u of candidatos(); track u.id) {
+                <mat-option [value]="u.id">
+                  {{ u.email }}{{ u.activo ? '' : ' (inactivo)' }}
+                </mat-option>
+              }
+            </mat-select>
+            @if (candidatos().length === 0) {
+              <mat-hint>No hay usuarios ANMAT sin perfil. Creá uno en este paso o en Usuarios y roles.</mat-hint>
+            }
+            @if (form.controls.usuarioId.hasError('required')) {
+              <mat-error>Elegí un usuario.</mat-error>
+            } @else if (form.controls.usuarioId.hasError('servidor')) {
+              <mat-error>{{ form.controls.usuarioId.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Nombre completo</mat-label>
+          <input matInput formControlName="nombreCompleto" maxlength="160" autocomplete="off" />
+          @if (form.controls.nombreCompleto.hasError('required')) {
+            <mat-error>El nombre completo es obligatorio.</mat-error>
+          } @else if (form.controls.nombreCompleto.hasError('servidor')) {
+            <mat-error>{{ form.controls.nombreCompleto.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Legajo oficial</mat-label>
+          <input matInput formControlName="legajoOficial" maxlength="80" autocomplete="off" />
+          @if (form.controls.legajoOficial.hasError('required')) {
+            <mat-error>El legajo es obligatorio.</mat-error>
+          } @else if (form.controls.legajoOficial.hasError('servidor')) {
+            <mat-error>{{ form.controls.legajoOficial.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>DNI (opcional)</mat-label>
+          <input matInput formControlName="dni" inputmode="numeric" maxlength="10" autocomplete="off" />
+          @if (form.controls.dni.hasError('dniInvalido')) {
+            <mat-error>{{ form.controls.dni.getError('dniInvalido') }}</mat-error>
+          } @else if (form.controls.dni.hasError('servidor')) {
+            <mat-error>{{ form.controls.dni.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Email institucional (opcional)</mat-label>
+          <input matInput type="email" formControlName="emailInstitucional" maxlength="180" autocomplete="off" />
+          @if (form.controls.emailInstitucional.hasError('email')) {
+            <mat-error>El formato de email institucional no es válido.</mat-error>
+          } @else if (form.controls.emailInstitucional.hasError('servidor')) {
+            <mat-error>{{ form.controls.emailInstitucional.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-ancho">
+          <mat-label>Autorizado por (jefe autorizador)</mat-label>
+          <input matInput formControlName="jefeAutorizador" maxlength="160" autocomplete="off" />
+          <mat-hint>Sugerido: el usuario de la sesión actual.</mat-hint>
+          @if (form.controls.jefeAutorizador.hasError('required')) {
+            <mat-error>El jefe autorizador es obligatorio.</mat-error>
+          } @else if (form.controls.jefeAutorizador.hasError('servidor')) {
+            <mat-error>{{ form.controls.jefeAutorizador.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="acciones-form">
+          <button mat-flat-button color="primary" type="submit" [disabled]="enviando()">
+            <mat-icon>how_to_reg</mat-icon>
+            {{ enviando() ? 'Guardando…' : 'Dar de alta' }}
+          </button>
+          <a mat-stroked-button routerLink="/inspectores/auditoria">
+            <mat-icon>manage_search</mat-icon>
+            Auditar inspector por DNI
+          </a>
+        </div>
+      </form>
+
+      @if (errorForm(); as msg) {
+        <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>Inspectores registrados</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando inspectores…"></app-loading-overlay>
+      } @else if (errorLista(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (inspectores().length === 0) {
+        <app-empty-state
+          icon="badge"
+          title="Todavía no hay inspectores"
+          description="Dá de alta el primero con el formulario de arriba."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="inspectores()" class="tabla-insp">
+            <ng-container matColumnDef="inspector">
+              <th mat-header-cell *matHeaderCellDef>Inspector</th>
+              <td mat-cell *matCellDef="let i">
+                <strong>{{ i.nombreCompleto }}</strong>
+                <span class="sub">{{ i.usuarioEmail }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="legajo">
+              <th mat-header-cell *matHeaderCellDef>Legajo</th>
+              <td mat-cell *matCellDef="let i">{{ i.legajoOficial || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="dni">
+              <th mat-header-cell *matHeaderCellDef>DNI</th>
+              <td mat-cell *matCellDef="let i">{{ i.dni || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="alta">
+              <th mat-header-cell *matHeaderCellDef>Alta</th>
+              <td mat-cell *matCellDef="let i">{{ i.fechaHoraAlta | fechaAr }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let i">
+                <app-status-badge [estado]="i.estado"></app-status-badge>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let i" class="col-acciones">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="estaProcesando(i.id)"
+                  (click)="alternarEstado(i)"
+                >
+                  {{ i.estado === 'HABILITADO' ? 'Suspender' : 'Habilitar' }}
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  matTooltip="Eliminar perfil"
+                  aria-label="Eliminar inspector"
+                  [disabled]="estaProcesando(i.id)"
+                  (click)="eliminar(i)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

@@ -1,0 +1,134 @@
+<section class="pagina">
+  <app-page-header
+    title="Cargar licencia y CUITs"
+    subtitle="Presentá tu cadena (laboratorio, distribuidor y farmacia) para que ANMAT la apruebe"
+    icon="assignment"
+  ></app-page-header>
+
+  @if (!miLaboratorio()) {
+    <app-error-alert
+      message="Tu sesión no tiene un laboratorio seleccionado. Cerrá sesión e ingresá eligiendo tu organización."
+      [showRetry]="false"
+    ></app-error-alert>
+  } @else {
+    @if (ultimaCreada(); as e) {
+      <mat-card class="exito" role="status">
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <strong>Solicitud #{{ e.id }} presentada.</strong>
+          Estado: <app-status-badge [estado]="e.estado"></app-status-badge>
+          <p>Queda pendiente hasta que ANMAT la resuelva. Podés seguirla en "Mis solicitudes".</p>
+        </div>
+        <a mat-stroked-button href="#mis-solicitudes">Ver mis solicitudes</a>
+      </mat-card>
+    }
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Nueva solicitud</mat-card-title>
+        <mat-card-subtitle>Laboratorio: {{ miLaboratorio()?.nombre }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-enlace-solicitud-form
+          [laboratorioFijo]="miLaboratorio()"
+          (creada)="onCreada($event)"
+        ></app-enlace-solicitud-form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card id="mis-solicitudes">
+      <mat-card-header>
+        <mat-card-title>Mis solicitudes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="filtros">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filtro-estado">
+            <mat-label>Estado</mat-label>
+            <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="PENDIENTE">Pendiente</mat-option>
+              <mat-option value="ACTIVO">Activo</mat-option>
+              <mat-option value="RECHAZADO">Rechazado</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-stroked-button type="button" (click)="cargar()" [disabled]="cargando()">
+            <mat-icon>refresh</mat-icon>
+            Actualizar
+          </button>
+        </div>
+
+        @if (cargando()) {
+          <app-loading-overlay [loading]="true" message="Cargando solicitudes…"></app-loading-overlay>
+        } @else if (error(); as msg) {
+          <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+        } @else if (totalPropias() === 0) {
+          <app-empty-state
+            icon="assignment_late"
+            title="Todavía no presentaste solicitudes"
+            description="Completá el formulario de arriba para presentar la primera."
+          ></app-empty-state>
+        } @else if (misSolicitudes().length === 0) {
+          <app-empty-state
+            icon="search_off"
+            title="Sin resultados"
+            description="Ninguna solicitud tiene ese estado."
+          ></app-empty-state>
+        } @else {
+          <div class="tabla-scroll">
+            <table mat-table [dataSource]="misSolicitudes()" class="tabla-enlaces">
+              <ng-container matColumnDef="distribuidor">
+                <th mat-header-cell *matHeaderCellDef>Distribuidor</th>
+                <td mat-cell *matCellDef="let e">
+                  <strong>{{ e.distribuidorNombre }}</strong>
+                  <span class="sub">{{ formatearCuit(e.distribuidorCuit) }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="farmacia">
+                <th mat-header-cell *matHeaderCellDef>Farmacia</th>
+                <td mat-cell *matCellDef="let e">
+                  <strong>{{ e.farmaciaNombre }}</strong>
+                  <span class="sub">{{ formatearCuit(e.farmaciaCuit) }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="disposicion">
+                <th mat-header-cell *matHeaderCellDef>Disposición</th>
+                <td mat-cell *matCellDef="let e">{{ e.numeroDisposicionANMAT || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let e">
+                  <app-status-badge [estado]="e.estado"></app-status-badge>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="solicitada">
+                <th mat-header-cell *matHeaderCellDef>Solicitada</th>
+                <td mat-cell *matCellDef="let e">{{ e.fechaSolicitud | fechaAr }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="resolucion">
+                <th mat-header-cell *matHeaderCellDef>Resolución</th>
+                <td mat-cell *matCellDef="let e">
+                  @if (e.estado === 'ACTIVO') {
+                    {{ e.fechaAprobacionANMAT | fechaAr }}
+                    <span class="sub">Aprobó: {{ e.inspectorAprobadorNombre || '—' }}</span>
+                  } @else if (e.estado === 'RECHAZADO') {
+                    <span class="sub">Rechazada (el sistema no registra quién ni cuándo).</span>
+                  } @else {
+                    —
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+            </table>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

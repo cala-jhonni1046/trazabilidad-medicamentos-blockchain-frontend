@@ -1,0 +1,191 @@
+<section class="usuarios-page">
+  <app-page-header
+    title="Usuarios y roles"
+    subtitle="Crear usuarios de la red y asignarles un rol"
+    icon="manage_accounts"
+  ></app-page-header>
+
+  <mat-card class="card-form">
+    <mat-card-header>
+      <mat-card-title>Crear usuario</mat-card-title>
+      <mat-card-subtitle>
+        La organización con la que opera un usuario se elige al ingresar (demo).
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="crear()" class="form-grid" novalidate>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-email">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="off"
+            maxlength="180"
+            placeholder="usuario@medichain.demo"
+          />
+          @if (form.controls.email.hasError('required')) {
+            <mat-error>El email es obligatorio.</mat-error>
+          } @else if (form.controls.email.hasError('email')) {
+            <mat-error>El formato de email no es válido.</mat-error>
+          } @else if (form.controls.email.hasError('servidor')) {
+            <mat-error>{{ form.controls.email.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-rol">
+          <mat-label>Rol</mat-label>
+          <mat-select formControlName="rol">
+            @for (r of rolesCreables; track r) {
+              <mat-option [value]="r">{{ getRolLabel(r) }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.rol.hasError('required')) {
+            <mat-error>El rol es obligatorio.</mat-error>
+          } @else if (form.controls.rol.hasError('servidor')) {
+            <mat-error>{{ form.controls.rol.getError('servidor') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="enviando()" class="btn-crear">
+          <mat-icon>person_add</mat-icon>
+          {{ enviando() ? 'Creando…' : 'Crear usuario' }}
+        </button>
+      </form>
+
+      @if (errorForm(); as msg) {
+        <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+      }
+
+      @if (ultimoAnmat(); as anmat) {
+        <div class="banner-anmat" role="status">
+          <mat-icon>verified_user</mat-icon>
+          <span>
+            Se creó <strong>{{ anmat.email }}</strong> con rol ANMAT. Para que pueda operar como
+            inspector, falta crear su perfil.
+          </span>
+          <button mat-stroked-button type="button" (click)="crearPerfilInspector(anmat)">
+            Crear perfil de inspector
+          </button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>Usuarios registrados</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" class="filtro-busqueda">
+          <mat-label>Buscar por email</mat-label>
+          <input
+            matInput
+            type="search"
+            [value]="busqueda()"
+            (input)="onBusqueda($event)"
+          />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-rol">
+          <mat-label>Rol</mat-label>
+          <mat-select [value]="filtroRol()" (selectionChange)="filtroRol.set($event.value)">
+            <mat-option value="">Todos</mat-option>
+            @for (r of rolesFiltro; track r) {
+              <mat-option [value]="r">{{ getRolLabel(r) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando usuarios…"></app-loading-overlay>
+      } @else if (errorLista(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (usuarios().length === 0) {
+        <app-empty-state
+          icon="group_off"
+          title="Todavía no hay usuarios"
+          description="Creá el primero con el formulario de arriba."
+        ></app-empty-state>
+      } @else if (filtrados().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ningún usuario coincide con el filtro o la búsqueda."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtrados()" class="tabla-usuarios">
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>Email</th>
+              <td mat-cell *matCellDef="let u">{{ u.email }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="rol">
+              <th mat-header-cell *matHeaderCellDef>Rol</th>
+              <td mat-cell *matCellDef="let u">{{ getRolLabel(u.rol) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let u">
+                <app-status-badge [estado]="u.activo"></app-status-badge>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Alta</th>
+              <td mat-cell *matCellDef="let u">{{ u.fechaCreacion | fechaAr: 'corto' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let u" class="col-acciones">
+                @if (u.rol === 'ANMAT') {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Crear perfil de inspector"
+                    aria-label="Crear perfil de inspector"
+                    (click)="crearPerfilInspector(u)"
+                  >
+                    <mat-icon>badge</mat-icon>
+                  </button>
+                }
+                <span [matTooltip]="motivoBloqueo(u)" [matTooltipDisabled]="!motivoBloqueo(u)">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [disabled]="accionBloqueada(u)"
+                    [attr.aria-label]="u.activo ? 'Desactivar usuario' : 'Activar usuario'"
+                    (click)="alternarEstado(u)"
+                  >
+                    <mat-icon>{{ u.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                  </button>
+                </span>
+                <span [matTooltip]="motivoBloqueo(u)" [matTooltipDisabled]="!motivoBloqueo(u)">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    color="warn"
+                    [disabled]="accionBloqueada(u)"
+                    aria-label="Eliminar usuario"
+                    (click)="eliminar(u)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

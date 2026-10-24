@@ -94,30 +94,48 @@
     align-items: center;
     gap: 0.75rem;
 
-    .network-badge {
+    .session-info {
       display: none;
-      align-items: center;
-      gap: 0.4rem;
-      background-color: rgba(255, 255, 255, 0.08);
-      padding: 0.3rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      flex-direction: column;
+      align-items: flex-end;
 
-      @media (min-width: 640px) {
+      @media (min-width: 600px) {
         display: flex;
       }
 
-      .pulse-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #10b981;
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+      .session-details {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
 
-      .network-label {
+      .session-email {
+        font-size: 0.82rem;
+        font-weight: 600;
         color: #e2e8f0;
+      }
+
+      .session-rol {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 9999px;
+        padding: 2px 8px;
+      }
+
+      .session-org {
+        font-size: 0.72rem;
+        color: #38bdf8;
+      }
+    }
+
+    .logout-btn {
+      color: #94a3b8;
+      &:hover {
+        color: #f87171;
       }
     }
 
@@ -162,6 +180,36 @@
       font-weight: 700;
       color: #94a3b8;
       letter-spacing: 0.08em;
+    }
+  }
+
+  .sidebar-session {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    margin: 0 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+
+    .sess-icon {
+      color: #0284c7;
+      font-size: 28px;
+    }
+
+    .sess-email {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .sess-rol {
+      display: block;
+      font-size: 0.72rem;
+      color: #64748b;
     }
   }
 
