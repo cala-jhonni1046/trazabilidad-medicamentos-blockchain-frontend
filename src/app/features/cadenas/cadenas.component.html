@@ -1,0 +1,94 @@
+<section class="cad-page">
+  <app-page-header
+    title="Auditoría global de cadenas"
+    subtitle="Enlace CUIT activo (laboratorio → distribuidor → farmacia) con sus lotes y despachos"
+    icon="link"
+  >
+    <a mat-stroked-button routerLink="/cadenas/lote" actions>
+      <mat-icon>fact_check</mat-icon>
+      Comprobar un lote
+    </a>
+  </app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    Una "cadena" es una proyección de este frontend, no una entidad del backend: combina el enlace
+    CUIT activo con sus despachos y lotes asociados.
+  </p>
+
+  <app-loading-overlay [loading]="cargando()" message="Cargando cadenas…"></app-loading-overlay>
+
+  @if (!cargando()) {
+    @if (error()) {
+      <app-error-alert [message]="error()" (retry)="cargar()"></app-error-alert>
+    } @else if (cadenas().length === 0) {
+      <app-empty-state
+        icon="link_off"
+        title="No hay enlaces CUIT activos"
+        description="Una cadena aparece acá cuando ANMAT aprueba un enlace laboratorio-distribuidor-farmacia."
+      ></app-empty-state>
+    } @else {
+      <div class="lista-cadenas">
+        @for (c of cadenas(); track c.enlace.id) {
+          <mat-card class="card-cadena">
+            <mat-card-content>
+              <div class="trinomio">
+                <span class="org">{{ c.enlace.laboratorioNombre }} <small>({{ c.enlace.laboratorioCuit }})</small></span>
+                <mat-icon>arrow_forward</mat-icon>
+                <span class="org">{{ c.enlace.distribuidorNombre }} <small>({{ c.enlace.distribuidorCuit }})</small></span>
+                <mat-icon>arrow_forward</mat-icon>
+                <span class="org">{{ c.enlace.farmaciaNombre }} <small>({{ c.enlace.farmaciaCuit }})</small></span>
+              </div>
+
+              <p class="aprobacion">
+                Aprobado por {{ c.enlace.inspectorAprobadorNombre || '—' }}
+                @if (c.enlace.fechaAprobacionANMAT) {
+                  el {{ c.enlace.fechaAprobacionANMAT | fechaAr: 'corto' }}
+                }
+                @if (c.enlace.numeroDisposicionANMAT) {
+                  · Disposición {{ c.enlace.numeroDisposicionANMAT }}
+                }
+              </p>
+
+              <div class="bloque-chips">
+                <span class="chips-label">Lotes:</span>
+                @if (c.lotes.length === 0) {
+                  <span class="sin-datos">ninguno todavía</span>
+                } @else {
+                  <mat-chip-set>
+                    @for (l of c.lotes; track l.id) {
+                      <a
+                        mat-chip
+                        [routerLink]="['/cadenas/lote']"
+                        [queryParams]="{ codigoLote: l.codigoLote }"
+                        [matTooltip]="'Comprobar ' + l.codigoLote"
+                      >
+                        {{ l.codigoLote }}
+                      </a>
+                    }
+                  </mat-chip-set>
+                }
+              </div>
+
+              <div class="bloque-chips">
+                <span class="chips-label">Despachos:</span>
+                @if (c.despachos.length === 0) {
+                  <span class="sin-datos">ninguno todavía</span>
+                } @else {
+                  <mat-chip-set>
+                    @for (d of c.despachos; track d.id) {
+                      <mat-chip>
+                        {{ d.numeroRemito }}
+                        <app-status-badge [estado]="d.estado"></app-status-badge>
+                      </mat-chip>
+                    }
+                  </mat-chip-set>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
+  }
+</section>

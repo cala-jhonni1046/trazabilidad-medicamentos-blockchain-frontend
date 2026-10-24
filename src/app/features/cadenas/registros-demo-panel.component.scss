@@ -1,0 +1,82 @@
+.aviso-blockchain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(98, 55, 184, 0.08);
+  color: #6237b8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  margin: 0 0 14px;
+}
+
+.form-registro {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.campo-hash {
+  flex: 2;
+  min-width: 200px;
+}
+
+.campo-bloque {
+  width: 100px;
+}
+
+.campo-firma {
+  flex: 1;
+  min-width: 140px;
+}
+
+.error-texto {
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.lista-registros {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lista-registros li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.hash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.hash-chip mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+.meta {
+  font-size: 0.78rem;
+  color: #64748b;
+}

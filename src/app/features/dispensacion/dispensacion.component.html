@@ -1,0 +1,109 @@
+<section class="disp-page">
+  <app-page-header
+    title="Dispensación minorista"
+    subtitle="Venta por DNI — Farmacia: busca la unidad por QR, verifica y despacha"
+    icon="point_of_sale"
+  ></app-page-header>
+
+  <p class="aviso-dni" role="note">
+    <mat-icon>warning</mat-icon>
+    Los DNI del MVP deben ser ficticios. No se muestran ni se guardan en pantalla después de enviar.
+  </p>
+
+  @if (confirmacion(); as c) {
+    <mat-card class="card-confirmacion" role="status">
+      <mat-card-content>
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <strong>Dispensación #{{ c.id }} registrada.</strong>
+          <p>
+            QR: {{ c.codigoUnicoQR }} · {{ c.fechaDispensacion | fechaAr }}
+            @if (c.recetaNumero) {
+              · Receta: {{ c.recetaNumero }}
+            }
+          </p>
+        </div>
+        <button mat-stroked-button type="button" (click)="nuevaConsulta()">Dispensar otra unidad</button>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="card-busqueda">
+      <mat-card-content>
+        <form class="form-qr" (ngSubmit)="buscar()">
+          <mat-form-field appearance="outline" class="campo-qr">
+            <mat-label>Código QR</mat-label>
+            <input matInput name="codigoQr" [(ngModel)]="codigoQr" placeholder="Ej.: QR-UNIT-001" autocomplete="off" />
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit" [disabled]="buscando() || !codigoQr.trim()">
+            Buscar
+          </button>
+        </form>
+
+        <app-loading-overlay [loading]="buscando()" message="Buscando unidad…"></app-loading-overlay>
+
+        @if (errorBusqueda()) {
+          <p class="error-texto" role="alert">{{ errorBusqueda() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (unidad(); as u) {
+      <mat-card class="card-verificacion">
+        <mat-card-content>
+          <h3>Verificación</h3>
+          <dl class="detalle-grid">
+            <dt>Unidad</dt>
+            <dd>{{ u.codigoUnicoQR }} · <app-status-badge [estado]="u.estado"></app-status-badge></dd>
+            @if (lote(); as l) {
+              <dt>Lote</dt>
+              <dd>{{ l.codigoLote }} · <app-status-badge [estado]="l.estado"></app-status-badge></dd>
+              @if (l.medicamentoNombre) {
+                <dt>Medicamento</dt>
+                <dd>{{ l.medicamentoNombre }}</dd>
+              }
+            }
+          </dl>
+
+          @if (!elegible()) {
+            <p class="error-texto" role="alert">{{ motivoNoElegible() }}</p>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="dispensar()" class="form-dispensar">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>DNI del paciente (opcional, ficticio)</mat-label>
+              <input matInput formControlName="dniPaciente" autocomplete="off" maxlength="16" />
+              @if (form.controls.dniPaciente.hasError('dniInvalido')) {
+                <mat-error>{{ form.controls.dniPaciente.getError('dniInvalido') }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Número de receta (opcional)</mat-label>
+              <input matInput formControlName="recetaNumero" maxlength="100" autocomplete="off" />
+            </mat-form-field>
+
+            @if (errorEnvio()) {
+              <p class="error-texto" role="alert">{{ errorEnvio() }}</p>
+            }
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="!elegible() || enviando() || form.invalid"
+            >
+              @if (enviando()) {
+                Dispensando…
+              } @else {
+                <ng-container>
+                  <mat-icon>check</mat-icon>
+                  Confirmar dispensación
+                </ng-container>
+              }
+            </button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</section>

@@ -1,0 +1,72 @@
+.cad-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aviso-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.lista-cadenas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trinomio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.trinomio mat-icon {
+  color: #94a3b8;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.org small {
+  color: #64748b;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+.aprobacion {
+  margin: 0 0 12px;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.bloque-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.chips-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.sin-datos {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+}

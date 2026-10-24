@@ -1,0 +1,75 @@
+.disp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+}
+
+.aviso-dni {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.form-qr {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.campo-qr {
+  flex: 1;
+  min-width: 200px;
+}
+
+.error-texto {
+  color: #b91c1c;
+  font-size: 0.88rem;
+}
+
+.card-confirmacion {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.card-confirmacion mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card-confirmacion mat-icon {
+  color: #059669;
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+}
+
+dt {
+  color: #64748b;
+  font-weight: 500;
+}
+
+dd {
+  margin: 0;
+}
+
+.form-dispensar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}

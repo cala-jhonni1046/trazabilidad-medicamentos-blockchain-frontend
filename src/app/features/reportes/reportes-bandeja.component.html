@@ -1,0 +1,121 @@
+<section class="rep-page">
+  <app-page-header
+    title="Reportes de irregularidades enviados por pacientes"
+    subtitle="Bandeja de revisión de ANMAT"
+    icon="report_problem"
+  ></app-page-header>
+
+  @if (!puedeActuar()) {
+    <p class="aviso-solo-lectura" role="note">
+      <mat-icon>visibility</mat-icon>
+      @if (session.rol() === 'SUPERADMIN') {
+        Sede Central ve esta bandeja en modo lectura.
+      } @else {
+        Tu perfil de inspector está suspendido: solo podés ver los reportes, no resolverlos.
+      }
+    </p>
+  }
+
+  <mat-card class="card-filtros">
+    <mat-card-content>
+      <form [formGroup]="filtros" (ngSubmit)="cargar()" class="form-filtros">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="">Todos</mat-option>
+            @for (e of estadosDisponibles; track e) {
+              <mat-option [value]="e">{{ e }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ID del inspector</mat-label>
+          <input matInput type="number" formControlName="inspectorId" min="1" />
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit">
+          <mat-icon>search</mat-icon>
+          Filtrar
+        </button>
+        <button mat-button type="button" (click)="filtros.reset(); cargar()">Limpiar</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <app-loading-overlay [loading]="cargando()" message="Cargando reportes…"></app-loading-overlay>
+
+  @if (!cargando()) {
+    @if (errorLista()) {
+      <app-error-alert [message]="errorLista()" (retry)="cargar()"></app-error-alert>
+    } @else if (reportesFiltrados().length === 0) {
+      <app-empty-state
+        icon="inbox"
+        title="No hay reportes para este filtro"
+        description="Probá con otro estado o limpiá los filtros."
+      ></app-empty-state>
+    } @else {
+      <div class="tabla-wrap">
+        <table mat-table [dataSource]="reportesFiltrados()" class="tabla-rep">
+          <ng-container matColumnDef="qr">
+            <th mat-header-cell *matHeaderCellDef>QR / unidad</th>
+            <td mat-cell *matCellDef="let r">{{ r.codigoUnicoQR || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="motivo">
+            <th mat-header-cell *matHeaderCellDef>Motivo</th>
+            <!-- Texto libre de terceros: interpolado, nunca HTML -->
+            <td mat-cell *matCellDef="let r" class="celda-motivo">{{ r.motivoReporte }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let r">{{ r.fechaHoraReporte | fechaAr }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let r"><app-status-badge [estado]="r.estado"></app-status-badge></td>
+          </ng-container>
+
+          <ng-container matColumnDef="inspector">
+            <th mat-header-cell *matHeaderCellDef>Inspector</th>
+            <td mat-cell *matCellDef="let r">{{ r.inspectorNombre || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let r" class="celda-acciones">
+              <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(r)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              @if (puedeActuar() && r.estado === 'PENDIENTE') {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  [disabled]="procesando().has(r.id)"
+                  (click)="iniciarRevision(r)"
+                >
+                  Iniciar revisión
+                </button>
+              }
+              @if (puedeActuar() && r.estado === 'EN_REVISION') {
+                <button
+                  mat-flat-button
+                  color="primary"
+                  [disabled]="procesando().has(r.id)"
+                  (click)="resolver(r)"
+                >
+                  Resolver
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+        </table>
+      </div>
+    }
+  }
+</section>
