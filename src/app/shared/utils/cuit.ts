@@ -22,37 +22,19 @@ export function formatearCuit(cuit: string | null | undefined): string {
 
 /**
  * Validador para Reactive Forms de Angular.
- * Comprueba que el CUIT contenga exactamente 11 dígitos numéricos
- * y que verifique el dígito verificador del algoritmo oficial de CUIT argentino.
+ * Acepta 11 dígitos o el formato XX-XXXXXXXX-X, igual que el backend.
+ * No verifica el dígito verificador: el CUIT es un dato demostrativo y no se valida contra ARCA/AFIP.
  */
 export function cuitValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const val = control.value;
     if (val === null || val === undefined || val === '') {
-      return null; // si es opcional, usar Validators.required por separado
+      return null; // si es obligatorio, usar Validators.required por separado
     }
-
-    const limpio = normalizarCuit(String(val));
-    if (limpio.length !== 11) {
-      return { cuitInvalido: 'El CUIT debe tener exactamente 11 dígitos numéricos.' };
+    const texto = String(val).trim();
+    if (!/^(\d{11}|\d{2}-\d{8}-\d)$/.test(texto)) {
+      return { cuitInvalido: 'El CUIT debe tener 11 dígitos o el formato XX-XXXXXXXX-X.' };
     }
-
-    // Validación del dígito verificador (módulo 11)
-    const multiplicadores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    let suma = 0;
-    for (let i = 0; i < 10; i++) {
-      suma += parseInt(limpio[i], 10) * multiplicadores[i];
-    }
-    const resto = suma % 11;
-    let digitoEsperado = 11 - resto;
-    if (digitoEsperado === 11) digitoEsperado = 0;
-    if (digitoEsperado === 10) digitoEsperado = 9;
-
-    const digitoReal = parseInt(limpio[10], 10);
-    if (digitoReal !== digitoEsperado) {
-      return { cuitVerificadorInvalido: 'El dígito verificador del CUIT no es válido.' };
-    }
-
     return null;
   };
 }

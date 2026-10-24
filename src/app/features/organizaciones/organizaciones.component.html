@@ -1,0 +1,197 @@
+<section class="orgs-page">
+  <app-page-header
+    title="Organizaciones"
+    subtitle="Laboratorios, distribuidores y farmacias de la red"
+    icon="business"
+  ></app-page-header>
+
+  <p class="aviso-demo" role="note">
+    <mat-icon>info</mat-icon>
+    El CUIT no se valida contra ARCA/AFIP; es un dato demostrativo.
+  </p>
+
+  @if (puedeEditar()) {
+    <mat-card class="card-form">
+      <mat-card-header>
+        <mat-card-title>
+          {{ editando() ? 'Editar organización' : 'Registrar organización' }}
+        </mat-card-title>
+        @if (editando(); as e) {
+          <mat-card-subtitle>Editando a {{ e.nombre }}</mat-card-subtitle>
+        }
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid" novalidate>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-cuit">
+            <mat-label>CUIT</mat-label>
+            <input
+              matInput
+              formControlName="cuit"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="13"
+              placeholder="XX-XXXXXXXX-X"
+            />
+            <mat-hint>11 dígitos o formato XX-XXXXXXXX-X</mat-hint>
+            @if (form.controls.cuit.hasError('required')) {
+              <mat-error>El CUIT es obligatorio.</mat-error>
+            } @else if (form.controls.cuit.hasError('cuitInvalido')) {
+              <mat-error>{{ form.controls.cuit.getError('cuitInvalido') }}</mat-error>
+            } @else if (form.controls.cuit.hasError('servidor')) {
+              <mat-error>{{ form.controls.cuit.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-nombre">
+            <mat-label>Nombre o razón social</mat-label>
+            <input matInput formControlName="nombre" maxlength="160" autocomplete="off" />
+            @if (form.controls.nombre.hasError('required')) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            } @else if (form.controls.nombre.hasError('maxlength')) {
+              <mat-error>El nombre no puede superar los 160 caracteres.</mat-error>
+            } @else if (form.controls.nombre.hasError('servidor')) {
+              <mat-error>{{ form.controls.nombre.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-tipo">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              @for (t of tipos; track t) {
+                <mat-option [value]="t">{{ tipoLabel(t) }}</mat-option>
+              }
+            </mat-select>
+            @if (form.controls.tipo.hasError('required')) {
+              <mat-error>El tipo es obligatorio.</mat-error>
+            } @else if (form.controls.tipo.hasError('servidor')) {
+              <mat-error>{{ form.controls.tipo.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="acciones-form">
+            <button mat-flat-button color="primary" type="submit" [disabled]="enviando()">
+              <mat-icon>{{ editando() ? 'save' : 'add_business' }}</mat-icon>
+              {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar' }}
+            </button>
+            @if (editando()) {
+              <button mat-stroked-button type="button" (click)="cancelarEdicion()" [disabled]="enviando()">
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+
+        @if (errorForm(); as msg) {
+          <app-error-alert [message]="msg" [showRetry]="false"></app-error-alert>
+        }
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <p class="aviso-lectura" role="status">
+      <mat-icon>visibility</mat-icon>
+      Vista de solo lectura. Las altas, ediciones y bajas las realiza Sede Central.
+    </p>
+  }
+
+  <mat-card class="card-tabla">
+    <mat-card-header>
+      <mat-card-title>Organizaciones registradas</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filtros">
+        <mat-form-field appearance="outline" class="filtro-busqueda">
+          <mat-label>Buscar por CUIT o nombre</mat-label>
+          <input matInput type="search" [value]="busqueda()" (input)="onBusqueda($event)" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-tipo">
+          <mat-label>Tipo</mat-label>
+          <mat-select [value]="filtroTipo()" (selectionChange)="filtroTipo.set($event.value)">
+            <mat-option value="">Todos</mat-option>
+            @for (t of tipos; track t) {
+              <mat-option [value]="t">{{ tipoLabel(t) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (cargando()) {
+        <app-loading-overlay [loading]="true" message="Cargando organizaciones…"></app-loading-overlay>
+      } @else if (errorLista(); as msg) {
+        <app-error-alert [message]="msg" (retry)="cargar()"></app-error-alert>
+      } @else if (organizaciones().length === 0) {
+        <app-empty-state
+          icon="domain_disabled"
+          title="Todavía no hay organizaciones"
+          [description]="puedeEditar() ? 'Registrá la primera con el formulario de arriba.' : 'Sede Central todavía no registró ninguna.'"
+        ></app-empty-state>
+      } @else if (filtradas().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin resultados"
+          description="Ninguna organización coincide con el filtro o la búsqueda."
+        ></app-empty-state>
+      } @else {
+        <div class="tabla-scroll">
+          <table mat-table [dataSource]="filtradas()" class="tabla-orgs">
+            <ng-container matColumnDef="cuit">
+              <th mat-header-cell *matHeaderCellDef>CUIT</th>
+              <td mat-cell *matCellDef="let o" class="celda-cuit">{{ formatearCuit(o.cuit) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let o">{{ o.nombre }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let o">
+                <span class="chip-tipo">
+                  <mat-icon>{{ tipoIcon(o.tipo) }}</mat-icon>
+                  {{ tipoLabel(o.tipo) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Alta</th>
+              <td mat-cell *matCellDef="let o">{{ o.fechaCreacion | fechaAr: 'corto' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let o" class="col-acciones">
+                <button
+                  mat-icon-button
+                  type="button"
+                  matTooltip="Editar"
+                  aria-label="Editar organización"
+                  [disabled]="estaProcesando(o.id)"
+                  (click)="editar(o)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  matTooltip="Eliminar"
+                  aria-label="Eliminar organización"
+                  [disabled]="estaProcesando(o.id)"
+                  (click)="eliminar(o)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas()"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>
