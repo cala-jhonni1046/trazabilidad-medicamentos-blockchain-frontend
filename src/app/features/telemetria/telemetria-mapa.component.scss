@@ -1,0 +1,128 @@
+.telemetria-mapa-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.selector-card {
+  margin-bottom: 16px;
+  padding: 8px 16px;
+
+  .selector-row {
+    width: 100%;
+
+    .selector-field {
+      width: 100%;
+      margin-bottom: -1.25em;
+    }
+  }
+}
+
+.ficha-vehiculo-card {
+  margin-bottom: 20px;
+  background: #f8fafc;
+
+  .ficha-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 8px 0;
+
+    .ficha-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .label {
+        font-size: 0.78rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .valor {
+        font-size: 0.95rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &.muted {
+          color: #94a3b8;
+          font-style: italic;
+        }
+
+        &.alert-text {
+          color: #dc2626;
+        }
+
+        .patente-box {
+          font-family: monospace;
+          background: #ffffff;
+          padding: 2px 6px;
+          border: 1px solid #cbd5e1;
+          border-radius: 4px;
+        }
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+
+          &.icon-alert {
+            color: #dc2626;
+          }
+        }
+
+        .excursion-badge {
+          font-size: 0.75rem;
+          background: #fee2e2;
+          color: #b91c1c;
+          border: 1px solid #fca5a5;
+          padding: 1px 6px;
+          border-radius: 4px;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  .alerta-inspector-box {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #ef4444;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: #991b1b;
+    font-size: 0.88rem;
+
+    mat-icon {
+      color: #dc2626;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+
+    .alerta-inspector-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+}
+
+.telemetria-paneles {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panel-card {
+  mat-card-content {
+    margin-top: 12px;
+  }
+}

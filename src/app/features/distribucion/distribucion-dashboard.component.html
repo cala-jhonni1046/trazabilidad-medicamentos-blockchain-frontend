@@ -1,0 +1,129 @@
+<div class="distribucion-dashboard-container">
+  <app-page-header
+    title="Dashboard operativo de logística"
+    subtitle="Gestión de cargas asignadas, verificación de bultos y custodia en ruta"
+    icon="local_shipping"
+  >
+    <div actions>
+      <a mat-flat-button color="primary" routerLink="/distribucion/verificar">
+        <mat-icon>qr_code_scanner</mat-icon>
+        Verificar bulto (QR)
+      </a>
+      <button mat-stroked-button (click)="cargarCargasAsignadas()" [disabled]="cargando">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  </app-page-header>
+
+  <app-error-alert
+    *ngIf="errorAccion"
+    [message]="errorAccion"
+    [showRetry]="false"
+  ></app-error-alert>
+
+  <app-loading-overlay [loading]="cargando" message="Cargando despachos asignados a tu distribución…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarCargasAsignadas()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargando && !errorCarga">
+    <app-empty-state
+      *ngIf="cargas.length === 0"
+      icon="inventory_2"
+      title="No tienes cargas asignadas"
+      description="Actualmente no hay despachos registrados para tu organización distribuidora."
+    ></app-empty-state>
+
+    <div *ngIf="cargas.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="cargas" class="mat-elevation-z1">
+        <!-- Número de Remito -->
+        <ng-container matColumnDef="numeroRemito">
+          <th mat-header-cell *matHeaderCellDef>Remito</th>
+          <td mat-cell *matCellDef="let d">
+            <strong>{{ d.numeroRemito }}</strong>
+            <div *ngIf="d.codigoSeguimiento" class="sub-text">Seg: {{ d.codigoSeguimiento }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Lote y Medicamento -->
+        <ng-container matColumnDef="loteMedicamento">
+          <th mat-header-cell *matHeaderCellDef>Lote / Medicamento</th>
+          <td mat-cell *matCellDef="let d">
+            <div class="lote-title">{{ d.codigoLote || 'Lote #' + d.loteId }}</div>
+            <div class="sub-text">{{ d.medicamentoNombre || 'Medicamento' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Vehículo / Patente -->
+        <ng-container matColumnDef="vehiculoPatente">
+          <th mat-header-cell *matHeaderCellDef>Patente asignada</th>
+          <td mat-cell *matCellDef="let d">
+            <span *ngIf="d.vehiculoPatente" class="patente-box">{{ d.vehiculoPatente }}</span>
+            <span *ngIf="!d.vehiculoPatente" class="text-muted">—</span>
+          </td>
+        </ng-container>
+
+        <!-- Rango de Frío -->
+        <ng-container matColumnDef="rangoFrio">
+          <th mat-header-cell *matHeaderCellDef>Rango de frío</th>
+          <td mat-cell *matCellDef="let d">
+            <span class="frio-badge">
+              <mat-icon>ac_unit</mat-icon>
+              {{ d.temperaturaMinimaPermitida != null ? d.temperaturaMinimaPermitida + '°' : '—' }} a
+              {{ d.temperaturaMaximaPermitida != null ? d.temperaturaMaximaPermitida + '°C' : '—' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Farmacia Destino -->
+        <ng-container matColumnDef="farmaciaDestino">
+          <th mat-header-cell *matHeaderCellDef>Destino (Farmacia)</th>
+          <td mat-cell *matCellDef="let d">
+            <div>{{ d.farmaciaDestinoNombre || 'Farmacia' }}</div>
+            <div *ngIf="d.farmaciaDestinoCuit" class="sub-text">CUIT: {{ d.farmaciaDestinoCuit }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let d">
+            <app-status-badge [estado]="d.estado"></app-status-badge>
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let d" class="acciones-cell">
+            <!-- Asumir custodia / iniciar (Solo si está PREPARADO) -->
+            <button
+              *ngIf="d.estado === 'PREPARADO'"
+              mat-flat-button
+              color="primary"
+              (click)="asumirCustodia(d)"
+              [disabled]="accionEnCursoId === d.id"
+              title="Asumir custodia e iniciar transporte"
+            >
+              <mat-icon>play_arrow</mat-icon>
+              Asumir custodia
+            </button>
+
+            <!-- Ver detalle y eventos -->
+            <a mat-stroked-button [routerLink]="['/despachos', d.id]" title="Ver detalle del despacho">
+              <mat-icon>visibility</mat-icon>
+              Detalle
+            </a>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  </div>
+</div>

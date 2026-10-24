@@ -1,0 +1,98 @@
+<div class="verificar-bulto-container">
+  <app-page-header
+    title="Verificación de bulto y asunción de custodia"
+    subtitle="Escaneo de QR individual para validación de lote y registro de evento en ruta"
+    icon="qr_code_scanner"
+  >
+    <div actions>
+      <a mat-stroked-button routerLink="/distribucion">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a distribución
+      </a>
+    </div>
+  </app-page-header>
+
+  <app-loading-overlay [loading]="cargandoDespachos" message="Cargando despachos en curso…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarDespachos()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargandoDespachos && !errorCarga">
+    <div *ngIf="despachos.length === 0" class="aviso-vacio">
+      <mat-icon>info</mat-icon>
+      <p>No tienes despachos en estado PREPARADO o EN_TRANSITO disponibles para verificar bultos.</p>
+    </div>
+
+    <mat-card *ngIf="despachos.length > 0" class="form-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Verificación de bulto trazable</mat-card-title>
+        <mat-card-subtitle>Selecciona el despacho e ingresa o escanea el código QR del bulto</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="verificar()" class="verificar-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Despacho asociado</mat-label>
+              <mat-select formControlName="despachoId" (valueChange)="onDespachoChange($event)" required>
+                <mat-option *ngFor="let d of despachos" [value]="d.id">
+                  Remito: {{ d.numeroRemito }} — Lote: {{ d.codigoLote || d.loteId }} ({{ d.medicamentoNombre || 'Medicamento' }})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('despachoId')?.hasError('required')">Debe seleccionar un despacho</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div *ngIf="despachoSeleccionado" class="ficha-despacho-box">
+            <div class="item"><strong>Lote esperado:</strong> {{ despachoSeleccionado.codigoLote || 'Lote #' + despachoSeleccionado.loteId }}</div>
+            <div class="item"><strong>Medicamento:</strong> {{ despachoSeleccionado.medicamentoNombre || '—' }}</div>
+            <div class="item"><strong>Destino:</strong> {{ despachoSeleccionado.farmaciaDestinoNombre || 'Farmacia' }}</div>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Código QR del bulto o unidad trazable</mat-label>
+              <input matInput formControlName="codigoQr" placeholder="Ej: QR-MED-LOTE01-0001" required />
+              <mat-icon matSuffix>qr_code</mat-icon>
+              <mat-error *ngIf="form.get('codigoQr')?.hasError('required')">El código QR es obligatorio</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="verificando || form.invalid">
+              <mat-icon *ngIf="verificando">hourglass_empty</mat-icon>
+              <mat-icon *ngIf="!verificando">check_circle</mat-icon>
+              {{ verificando ? 'Verificando y registrando…' : 'Verificar bulto y asumir custodia' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Resultados de la verificación -->
+        <div *ngIf="resultado" class="resultado-box" [class.valido]="resultado.valido" [class.invalido]="!resultado.valido">
+          <div class="resultado-header">
+            <mat-icon>{{ resultado.valido ? 'verified' : 'highlight_off' }}</mat-icon>
+            <h3>{{ resultado.valido ? '¡Verificación exitosa!' : 'Verificación rechazada' }}</h3>
+          </div>
+
+          <div class="resultado-body">
+            <div *ngIf="resultado.valido">
+              <p>El bulto coincide con el lote <strong>{{ despachoSeleccionado?.codigoLote }}</strong> y su estado es conforme.</p>
+              <div *ngIf="resultado.eventoRegistrado" class="evento-confirmado">
+                <mat-icon>done_all</mat-icon>
+                <span>Evento de custodia <strong>CUSTODIA_ASUMIDA</strong> registrado exitosamente en la cadena de custodia.</span>
+              </div>
+            </div>
+
+            <div *ngIf="!resultado.valido">
+              <p class="motivo-rechazo"><strong>Motivo:</strong> {{ resultado.motivo }}</p>
+              <p class="aviso-seguridad">Por razones de seguridad y trazabilidad, no se registró evento de custodia.</p>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

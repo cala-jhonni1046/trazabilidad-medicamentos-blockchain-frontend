@@ -1,0 +1,188 @@
+<div class="temperatura-chart-wrapper">
+  <div *ngIf="!tieneLecturas">
+    <app-empty-state
+      icon="thermostat"
+      title="Sin lecturas de temperatura"
+      description="No se han registrado lecturas térmicas para este despacho."
+    ></app-empty-state>
+  </div>
+
+  <div *ngIf="tieneLecturas" class="chart-content">
+    <!-- Métricas rápidas de temperatura -->
+    <div class="metrics-bar">
+      <div class="metric-card" [class.alert]="ultimaLectura?.alertaExcursion">
+        <span class="metric-label">Última lectura:</span>
+        <span class="metric-value">
+          <mat-icon [class.icon-alert]="ultimaLectura?.alertaExcursion">
+            {{ ultimaLectura?.alertaExcursion ? 'warning' : 'thermostat' }}
+          </mat-icon>
+          {{ ultimaLectura?.temperatura }} °C
+        </span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Rango permitido:</span>
+        <span class="metric-value neutral">
+          {{ tempMin != null ? tempMin + ' °C' : '—' }} a {{ tempMax != null ? tempMax + ' °C' : '—' }}
+        </span>
+      </div>
+
+      <div class="metric-card" [class.alert]="totalExcursiones > 0">
+        <span class="metric-label">Excursiones térmicas:</span>
+        <span class="metric-value" [class.icon-alert]="totalExcursiones > 0">
+          {{ totalExcursiones }} detectada{{ totalExcursiones === 1 ? '' : 's' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Gráfico SVG propio -->
+    <div class="svg-container">
+      <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="chart-svg">
+        <!-- Ejes y cuadrícula -->
+        <line
+          [attr.x1]="padding.left"
+          [attr.y1]="height - padding.bottom"
+          [attr.x2]="width - padding.right"
+          [attr.y2]="height - padding.bottom"
+          stroke="#cbd5e1"
+          stroke-width="1.5"
+        />
+        <line
+          [attr.x1]="padding.left"
+          [attr.y1]="padding.top"
+          [attr.x2]="padding.left"
+          [attr.y2]="height - padding.bottom"
+          stroke="#cbd5e1"
+          stroke-width="1.5"
+        />
+
+        <!-- Líneas guía de límites térmicos (rango permitido) -->
+        <g *ngIf="chartData.yMinPos != null">
+          <line
+            [attr.x1]="padding.left"
+            [attr.y1]="chartData.yMinPos"
+            [attr.x2]="width - padding.right"
+            [attr.y2]="chartData.yMinPos"
+            stroke="#10b981"
+            stroke-dasharray="4,4"
+            stroke-width="1.5"
+          />
+          <text
+            [attr.x]="width - padding.right - 4"
+            [attr.y]="chartData.yMinPos - 4"
+            fill="#059669"
+            font-size="10"
+            text-anchor="end"
+            font-weight="bold"
+          >
+            Mín: {{ tempMin }} °C
+          </text>
+        </g>
+
+        <g *ngIf="chartData.yMaxPos != null">
+          <line
+            [attr.x1]="padding.left"
+            [attr.y1]="chartData.yMaxPos"
+            [attr.x2]="width - padding.right"
+            [attr.y2]="chartData.yMaxPos"
+            stroke="#ef4444"
+            stroke-dasharray="4,4"
+            stroke-width="1.5"
+          />
+          <text
+            [attr.x]="width - padding.right - 4"
+            [attr.y]="chartData.yMaxPos - 4"
+            fill="#dc2626"
+            font-size="10"
+            text-anchor="end"
+            font-weight="bold"
+          >
+            Máx: {{ tempMax }} °C
+          </text>
+        </g>
+
+        <!-- Polilínea de conexión de datos -->
+        <polyline
+          fill="none"
+          stroke="#0284c7"
+          stroke-width="2.5"
+          [attr.points]="chartData.polylineStr"
+        />
+
+        <!-- Puntos individuales -->
+        <g *ngFor="let p of chartData.points">
+          <circle
+            [attr.cx]="p.x"
+            [attr.cy]="p.y"
+            [attr.r]="p.excursion ? 6 : 4"
+            [attr.fill]="p.excursion ? '#ef4444' : '#0284c7'"
+            [attr.stroke]="p.excursion ? '#ffffff' : '#e0f2fe'"
+            stroke-width="2"
+          >
+            <title>{{ p.fecha | fechaAr: 'completo' }}: {{ p.temp }} °C (Sensor: {{ p.sensorId }}) {{ p.excursion ? '¡EXCURSIÓN!' : '' }}</title>
+          </circle>
+          <text
+            [attr.x]="p.x"
+            [attr.y]="p.y - 8"
+            [attr.fill]="p.excursion ? '#b91c1c' : '#0369a1'"
+            font-size="10"
+            font-weight="600"
+            text-anchor="middle"
+          >
+            {{ p.temp }}°
+          </text>
+        </g>
+
+        <!-- Etiqueta eje Y -->
+        <text
+          [attr.x]="padding.left - 8"
+          [attr.y]="padding.top + 8"
+          fill="#64748b"
+          font-size="10"
+          text-anchor="end"
+        >
+          °C
+        </text>
+      </svg>
+    </div>
+
+    <!-- Tabla de lecturas de temperatura -->
+    <div class="table-responsive">
+      <table mat-table [dataSource]="lecturas" class="mat-elevation-z1">
+        <ng-container matColumnDef="fechaHora">
+          <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaHora | fechaAr: 'completo' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sensorId">
+          <th mat-header-cell *matHeaderCellDef>Sensor ID</th>
+          <td mat-cell *matCellDef="let row"><code>{{ row.sensorId }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="temperatura">
+          <th mat-header-cell *matHeaderCellDef>Temperatura</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.temp-alerta]="row.alertaExcursion">
+              <strong>{{ row.temperatura }} °C</strong>
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span *ngIf="row.alertaExcursion" class="alerta-badge">
+              <mat-icon>warning</mat-icon> Excursión
+            </span>
+            <span *ngIf="!row.alertaExcursion" class="ok-badge">
+              <mat-icon>check_circle</mat-icon> En rango
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  </div>
+</div>
