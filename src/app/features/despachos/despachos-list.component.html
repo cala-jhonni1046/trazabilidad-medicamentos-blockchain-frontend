@@ -1,0 +1,170 @@
+<div class="despachos-list-container">
+  <app-page-header
+    title="Despachos logísticos"
+    subtitle="Control de traslados, asignación de transporte y seguimiento de custodia"
+    icon="local_shipping"
+  >
+    <div actions *ngIf="session.rol() === 'LABORATORIO'">
+      <a mat-flat-button color="primary" routerLink="/despachos/nuevo">
+        <mat-icon>add</mat-icon>
+        Nuevo despacho
+      </a>
+    </div>
+  </app-page-header>
+
+  <!-- Barra de Filtros -->
+  <mat-card class="filtros-card" appearance="outlined">
+    <div class="filtros-grid">
+      <mat-form-field appearance="outline" class="filtro-item">
+        <mat-label>Filtrar por estado</mat-label>
+        <mat-select [(ngModel)]="filtroEstado">
+          <mat-option value="TODOS">Todos los estados</mat-option>
+          <mat-option value="PREPARADO">Preparado</mat-option>
+          <mat-option value="EN_TRANSITO">En tránsito</mat-option>
+          <mat-option value="RECIBIDO">Recibido</mat-option>
+          <mat-option value="CANCELADO">Cancelado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filtro-item busqueda">
+        <mat-label>Buscar por remito, lote, medicamento o distribuidor</mat-label>
+        <input matInput [(ngModel)]="filtroBusqueda" placeholder="Ej: REM-001 o LOTE-X" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <app-error-alert
+    *ngIf="errorAccion"
+    [message]="errorAccion"
+    [showRetry]="false"
+  ></app-error-alert>
+
+  <app-loading-overlay [loading]="cargando" message="Cargando despachos logísticos…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarDespachos()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargando && !errorCarga">
+    <app-empty-state
+      *ngIf="despachosFiltrados.length === 0"
+      icon="local_shipping"
+      title="No se encontraron despachos"
+      [description]="despachos.length === 0 ? 'Todavía no hay despachos registrados.' : 'No hay despachos que coincidan con los filtros aplicados.'"
+    >
+      <div *ngIf="session.rol() === 'LABORATORIO' && despachos.length === 0" style="margin-top: 16px;">
+        <a mat-flat-button color="primary" routerLink="/despachos/nuevo">
+          <mat-icon>add</mat-icon> Crear despacho
+        </a>
+      </div>
+    </app-empty-state>
+
+    <div *ngIf="despachosFiltrados.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="despachosFiltrados" class="mat-elevation-z1">
+        <!-- Número de Remito -->
+        <ng-container matColumnDef="numeroRemito">
+          <th mat-header-cell *matHeaderCellDef>Remito</th>
+          <td mat-cell *matCellDef="let d">
+            <strong class="remito-text">{{ d.numeroRemito }}</strong>
+            <div *ngIf="d.codigoSeguimiento" class="sub-text">Seg: {{ d.codigoSeguimiento }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Lote y Medicamento -->
+        <ng-container matColumnDef="lote">
+          <th mat-header-cell *matHeaderCellDef>Lote / Medicamento</th>
+          <td mat-cell *matCellDef="let d">
+            <div class="lote-codigo">{{ d.codigoLote || 'Lote #' + d.loteId }}</div>
+            <div class="sub-text">{{ d.medicamentoNombre || 'Medicamento' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Distribuidor -->
+        <ng-container matColumnDef="distribuidor">
+          <th mat-header-cell *matHeaderCellDef>Distribuidor</th>
+          <td mat-cell *matCellDef="let d">
+            <div>{{ d.distribuidorNombre || 'Distribuidor' }}</div>
+            <div *ngIf="d.distribuidorCuit" class="sub-text">CUIT: {{ d.distribuidorCuit }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Farmacia Destino -->
+        <ng-container matColumnDef="farmacia">
+          <th mat-header-cell *matHeaderCellDef>Farmacia destino</th>
+          <td mat-cell *matCellDef="let d">
+            <div>{{ d.farmaciaDestinoNombre || '—' }}</div>
+            <div *ngIf="d.farmaciaDestinoCuit" class="sub-text">CUIT: {{ d.farmaciaDestinoCuit }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Patente -->
+        <ng-container matColumnDef="vehiculoPatente">
+          <th mat-header-cell *matHeaderCellDef>Vehículo</th>
+          <td mat-cell *matCellDef="let d">
+            <span *ngIf="d.vehiculoPatente" class="patente-badge">{{ d.vehiculoPatente }}</span>
+            <span *ngIf="!d.vehiculoPatente" class="text-muted">—</span>
+          </td>
+        </ng-container>
+
+        <!-- Estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let d">
+            <app-status-badge [estado]="d.estado"></app-status-badge>
+          </td>
+        </ng-container>
+
+        <!-- Fechas -->
+        <ng-container matColumnDef="fechaSalida">
+          <th mat-header-cell *matHeaderCellDef>Salida</th>
+          <td mat-cell *matCellDef="let d">
+            {{ d.fechaSalida | fechaAr: 'corto' }}
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let d" class="acciones-cell">
+            <!-- Ver Detalle -->
+            <a mat-icon-button [routerLink]="['/despachos', d.id]" title="Ver detalle y eventos de custodia" aria-label="Ver detalle">
+              <mat-icon>visibility</mat-icon>
+            </a>
+
+            <!-- Iniciar (Solo si está PREPARADO) -->
+            <button
+              *ngIf="d.estado === 'PREPARADO'"
+              mat-icon-button
+              color="primary"
+              (click)="iniciar(d)"
+              [disabled]="accionEnCursoId === d.id"
+              title="Iniciar despacho (pasar a EN_TRANSITO)"
+              aria-label="Iniciar despacho"
+            >
+              <mat-icon>play_arrow</mat-icon>
+            </button>
+
+            <!-- Cancelar (Si está PREPARADO o EN_TRANSITO) -->
+            <button
+              *ngIf="d.estado === 'PREPARADO' || d.estado === 'EN_TRANSITO'"
+              mat-icon-button
+              color="warn"
+              (click)="cancelar(d)"
+              [disabled]="accionEnCursoId === d.id"
+              title="Cancelar despacho"
+              aria-label="Cancelar despacho"
+            >
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  </div>
+</div>

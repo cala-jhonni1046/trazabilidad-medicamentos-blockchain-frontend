@@ -1,0 +1,280 @@
+<div class="cuarentenas-dashboard-container">
+  <app-page-header
+    title="Dashboard de control de cuarentenas y telemetría"
+    subtitle="Supervisión de lotes farmacéuticos, detección de excursiones térmicas y medidas preventivas ANMAT"
+    icon="security"
+  >
+    <div actions>
+      <button mat-stroked-button (click)="cargarDashboard()" [disabled]="cargando">
+        <mat-icon>refresh</mat-icon>
+        Actualizar datos
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Tarjetas métricas superiores -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon primary">
+        <mat-icon>link</mat-icon>
+      </div>
+      <div class="metric-info">
+        <span class="metric-num">{{ cadenasActivasCount }}</span>
+        <span class="metric-title">Cadenas activas (Enlaces CUIT)</span>
+      </div>
+    </div>
+
+    <div class="metric-card" [class.danger]="lotesEnCuarentenaCount > 0">
+      <div class="metric-icon" [ngClass]="lotesEnCuarentenaCount > 0 ? 'danger' : 'neutral'">
+        <mat-icon>lock</mat-icon>
+      </div>
+      <div class="metric-info">
+        <span class="metric-num">{{ lotesEnCuarentenaCount }}</span>
+        <span class="metric-title">Lotes en cuarentena abierta</span>
+      </div>
+    </div>
+
+    <div class="metric-card" [class.warning]="reportesPendientesCount > 0">
+      <div class="metric-icon" [ngClass]="reportesPendientesCount > 0 ? 'warning' : 'neutral'">
+        <mat-icon>report</mat-icon>
+      </div>
+      <div class="metric-info">
+        <span class="metric-num">{{ reportesPendientesCount }}</span>
+        <span class="metric-title">Reportes ciudadanos pendientes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aviso de inspector inhabilitado/suspendido -->
+  <div *ngIf="!puedeOperar" class="alerta-suspendido">
+    <mat-icon>warning</mat-icon>
+    <div class="alerta-texto">
+      <strong>Perfil de inspector no habilitado para resolución:</strong>
+      <span>Tu usuario se encuentra en modo solo lectura. Las acciones de apertura, liberación y mantenimiento de cuarentenas están deshabilitadas.</span>
+    </div>
+  </div>
+
+  <app-error-alert
+    *ngIf="errorAccion"
+    [message]="errorAccion"
+    [showRetry]="false"
+  ></app-error-alert>
+
+  <app-loading-overlay [loading]="cargando" message="Cargando panel de control de cuarentenas y telemetría…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarDashboard()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargando && !errorCarga" class="tabs-container">
+    <mat-tab-group animationDuration="200ms">
+      <!-- Pestaña 1: Lotes y Control de Telemetría -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">inventory_2</mat-icon>
+          Lotes y telemetría en tránsito
+        </ng-template>
+
+        <div class="tab-body">
+          <app-empty-state
+            *ngIf="lotesConTelemetria.length === 0"
+            icon="inventory_2"
+            title="Sin lotes registrados"
+            description="No se registran lotes en el sistema para supervisión."
+          ></app-empty-state>
+
+          <div *ngIf="lotesConTelemetria.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="lotesConTelemetria" class="mat-elevation-z1">
+              <!-- Código y Fármaco -->
+              <ng-container matColumnDef="codigoLote">
+                <th mat-header-cell *matHeaderCellDef>Código / Medicamento</th>
+                <td mat-cell *matCellDef="let row">
+                  <div class="lote-title"><strong>{{ row.codigoLote }}</strong></div>
+                  <div class="sub-text">{{ row.medicamentoNombre }}</div>
+                </td>
+              </ng-container>
+
+              <!-- Trinomio de CUITs -->
+              <ng-container matColumnDef="trinomio">
+                <th mat-header-cell *matHeaderCellDef>Trinomio de CUITs autorizados</th>
+                <td mat-cell *matCellDef="let row">
+                  <div class="trinomio-grid">
+                    <div><span class="actor-tag">Lab:</span> {{ row.laboratorioNombre }} ({{ row.laboratorioCuit }})</div>
+                    <div><span class="actor-tag">Dist:</span> {{ row.distribuidorNombre || '—' }} ({{ row.distribuidorCuit || '—' }})</div>
+                    <div><span class="actor-tag">Farm:</span> {{ row.farmaciaNombre || '—' }} ({{ row.farmaciaCuit || '—' }})</div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Última temperatura y Alerta -->
+              <ng-container matColumnDef="temperatura">
+                <th mat-header-cell *matHeaderCellDef>Última temperatura</th>
+                <td mat-cell *matCellDef="let row">
+                  <div *ngIf="row.ultimaTemperatura != null" class="temp-badge-box">
+                    <span [class.temp-alerta]="row.alertaExcursion">
+                      <strong>{{ row.ultimaTemperatura }} °C</strong>
+                    </span>
+                    <span *ngIf="row.alertaExcursion" class="excursion-pill">
+                      <mat-icon>warning</mat-icon> ¡Excursión!
+                    </span>
+                  </div>
+                  <span *ngIf="row.ultimaTemperatura == null" class="text-muted">Sin lecturas</span>
+                </td>
+              </ng-container>
+
+              <!-- Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let row">
+                  <app-status-badge [estado]="row.estado"></app-status-badge>
+                </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Acciones ANMAT</th>
+                <td mat-cell *matCellDef="let row" class="acciones-cell">
+                  <!-- Si el lote tiene alerta de excursión y NO está en cuarentena abierta: sugerir botón destacado -->
+                  <button
+                    *ngIf="!row.cuarentenaAbierta && row.alertaExcursion"
+                    mat-flat-button
+                    color="warn"
+                    (click)="abrirCuarentena(row)"
+                    [disabled]="!puedeOperar || accionEnCurso"
+                    title="Abrir cuarentena recomendada por excursión"
+                  >
+                    <mat-icon>report_problem</mat-icon>
+                    Abrir cuarentena
+                  </button>
+
+                  <!-- Si el lote NO está en cuarentena y NO tiene excursión: apertura manual -->
+                  <button
+                    *ngIf="!row.cuarentenaAbierta && !row.alertaExcursion && row.estado !== 'CERRADO'"
+                    mat-stroked-button
+                    color="warn"
+                    (click)="abrirCuarentena(row)"
+                    [disabled]="!puedeOperar || accionEnCurso"
+                    title="Poner lote en cuarentena"
+                  >
+                    <mat-icon>lock</mat-icon>
+                    Cuarentena
+                  </button>
+
+                  <!-- Si el lote YA está en cuarentena abierta: Liberar o Mantener -->
+                  <div *ngIf="row.cuarentenaAbierta as cua" class="btn-group-resolucion">
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      (click)="resolverCuarentena(cua, 'LIBERAR', row.codigoLote)"
+                      [disabled]="!puedeOperar || accionEnCurso"
+                      title="Liberar lote de cuarentena"
+                    >
+                      <mat-icon>lock_open</mat-icon>
+                      Liberar
+                    </button>
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      (click)="resolverCuarentena(cua, 'MANTENER', row.codigoLote)"
+                      [disabled]="!puedeOperar || accionEnCurso"
+                      title="Mantener cuarentena (Confirmar desvío)"
+                    >
+                      <mat-icon>block</mat-icon>
+                      Mantener
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsLotes"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsLotes"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Pestaña 2: Historial de Cuarentenas -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">history</mat-icon>
+          Historial de cuarentenas
+        </ng-template>
+
+        <div class="tab-body">
+          <app-empty-state
+            *ngIf="historialCuarentenas.length === 0"
+            icon="history"
+            title="Sin historial de cuarentenas"
+            description="No se registran actuaciones de cuarentena en el histórico."
+          ></app-empty-state>
+
+          <div *ngIf="historialCuarentenas.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="historialCuarentenas" class="mat-elevation-z1">
+              <!-- Código Cuarentena -->
+              <ng-container matColumnDef="codigoCuarentena">
+                <th mat-header-cell *matHeaderCellDef>Código de medida</th>
+                <td mat-cell *matCellDef="let c">
+                  <strong>{{ c.codigoCuarentena }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Lote -->
+              <ng-container matColumnDef="lote">
+                <th mat-header-cell *matHeaderCellDef>Lote afectado</th>
+                <td mat-cell *matCellDef="let c">
+                  {{ c.codigoLote || 'Lote #' + c.loteId }}
+                </td>
+              </ng-container>
+
+              <!-- Fecha Inicio -->
+              <ng-container matColumnDef="fechaInicio">
+                <th mat-header-cell *matHeaderCellDef>Inicio de medida</th>
+                <td mat-cell *matCellDef="let c">
+                  {{ c.fechaInicio | fechaAr: 'completo' }}
+                </td>
+              </ng-container>
+
+              <!-- Motivo -->
+              <ng-container matColumnDef="motivo">
+                <th mat-header-cell *matHeaderCellDef>Motivo preventivo</th>
+                <td mat-cell *matCellDef="let c" class="motivo-cell">
+                  {{ c.motivo }}
+                </td>
+              </ng-container>
+
+              <!-- Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let c">
+                  <app-status-badge [estado]="c.estado"></app-status-badge>
+                </td>
+              </ng-container>
+
+              <!-- Inspector -->
+              <ng-container matColumnDef="inspector">
+                <th mat-header-cell *matHeaderCellDef>Inspector</th>
+                <td mat-cell *matCellDef="let c">
+                  {{ c.inspectorNombre || 'Inspector #' + (c.inspectorResponsableId || '—') }}
+                </td>
+              </ng-container>
+
+              <!-- Resolución Final -->
+              <ng-container matColumnDef="resolucionFinal">
+                <th mat-header-cell *matHeaderCellDef>Resolución / Dictamen</th>
+                <td mat-cell *matCellDef="let c" class="resolucion-cell">
+                  <span *ngIf="c.resolucionFinal">{{ c.resolucionFinal }}</span>
+                  <span *ngIf="!c.resolucionFinal" class="text-muted">— En curso —</span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsHistorial"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsHistorial"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

@@ -1,0 +1,135 @@
+.temperatura-chart-wrapper {
+  width: 100%;
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metrics-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .metric-card {
+    flex: 1;
+    min-width: 160px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .metric-label {
+      font-size: 0.78rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .metric-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0284c7;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      &.neutral {
+        color: #334155;
+        font-size: 0.95rem;
+      }
+
+      &.icon-alert {
+        color: #dc2626;
+      }
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+
+        &.icon-alert {
+          color: #dc2626;
+        }
+      }
+    }
+
+    &.alert {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+  }
+}
+
+.svg-container {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+
+  .chart-svg {
+    width: 100%;
+    max-height: 250px;
+  }
+}
+
+.table-responsive {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  table {
+    width: 100%;
+    min-width: 500px;
+  }
+}
+
+.temp-alerta {
+  color: #dc2626;
+}
+
+.alerta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.ok-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}

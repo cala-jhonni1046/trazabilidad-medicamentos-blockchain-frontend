@@ -1,0 +1,81 @@
+<div class="gps-map-wrapper">
+  <div *ngIf="lecturas.length === 0">
+    <app-empty-state
+      icon="navigation"
+      title="Todavía no hay lecturas"
+      description="El sensor de geolocalización aún no ha emitido coordenadas para este despacho."
+    ></app-empty-state>
+  </div>
+
+  <div *ngIf="lecturas.length > 0" class="map-content">
+    <div class="map-toolbar">
+      <div class="toolbar-info">
+        <span class="total-puntos">
+          <mat-icon>place</mat-icon>
+          {{ lecturas.length }} punto{{ lecturas.length === 1 ? '' : 's' }} registrado{{ lecturas.length === 1 ? '' : 's' }}
+        </span>
+        <span *ngIf="patente" class="patente-info">Vehículo: {{ patente }}</span>
+      </div>
+
+      <button mat-stroked-button (click)="toggleVista()" class="btn-toggle">
+        <mat-icon>{{ mostrarTabla ? 'map' : 'table_chart' }}</mat-icon>
+        {{ mostrarTabla ? 'Ver mapa interactivo' : 'Ver tabla de coordenadas' }}
+      </button>
+    </div>
+
+    <!-- Contenedor del Mapa Leaflet -->
+    <div
+      #mapElement
+      class="map-view"
+      [class.oculto]="modoFallback || mostrarTabla"
+      role="region"
+      aria-label="Mapa de recorrido del despacho"
+    ></div>
+
+    <!-- Fallback / Vista de Tabla de Coordenadas -->
+    <div *ngIf="modoFallback || mostrarTabla" class="table-view">
+      <div *ngIf="modoFallback && !mostrarTabla" class="fallback-banner">
+        <mat-icon>info</mat-icon>
+        <span>No se pudo cargar el mapa interactivo (falta de conexión o entorno sin renderizado gráfico). Mostrando tabla de coordenadas.</span>
+      </div>
+
+      <div class="table-responsive">
+        <table mat-table [dataSource]="lecturas" class="mat-elevation-z1">
+          <ng-container matColumnDef="fechaHora">
+            <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
+            <td mat-cell *matCellDef="let row">{{ row.fechaHora | fechaAr: 'completo' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="latitud">
+            <th mat-header-cell *matHeaderCellDef>Latitud</th>
+            <td mat-cell *matCellDef="let row"><code>{{ row.latitud | number: '1.4-6' }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="longitud">
+            <th mat-header-cell *matHeaderCellDef>Longitud</th>
+            <td mat-cell *matCellDef="let row"><code>{{ row.longitud | number: '1.4-6' }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="velocidad">
+            <th mat-header-cell *matHeaderCellDef>Velocidad</th>
+            <td mat-cell *matCellDef="let row">{{ row.velocidad != null ? row.velocidad + ' km/h' : '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="direccion">
+            <th mat-header-cell *matHeaderCellDef>Dirección / Tramo</th>
+            <td mat-cell *matCellDef="let row">{{ row.direccionAproximada || '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="map-footer">
+      <span class="osm-attribution">
+        Cartografía: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
+      </span>
+    </div>
+  </div>
+</div>

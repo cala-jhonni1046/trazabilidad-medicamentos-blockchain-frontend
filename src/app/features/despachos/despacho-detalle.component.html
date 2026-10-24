@@ -1,0 +1,192 @@
+<div class="despacho-detalle-container">
+  <app-page-header
+    [title]="'Despacho: Remito ' + (despacho?.numeroRemito || '#' + despachoId)"
+    subtitle="Detalle del traslado logístico y eventos demostrativos de custodia"
+    icon="local_shipping"
+  >
+    <div actions>
+      <a mat-stroked-button routerLink="/despachos">
+        <mat-icon>arrow_back</mat-icon>
+        Volver
+      </a>
+      <button
+        *ngIf="despacho?.estado === 'PREPARADO'"
+        mat-flat-button
+        color="primary"
+        (click)="iniciar()"
+        [disabled]="accionEnCurso"
+      >
+        <mat-icon>play_arrow</mat-icon>
+        Iniciar traslado
+      </button>
+      <button
+        *ngIf="despacho?.estado === 'PREPARADO' || despacho?.estado === 'EN_TRANSITO'"
+        mat-stroked-button
+        color="warn"
+        (click)="cancelar()"
+        [disabled]="accionEnCurso"
+      >
+        <mat-icon>cancel</mat-icon>
+        Cancelar despacho
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Aviso de Demostración Académica -->
+  <div class="mock-notice-card">
+    <mat-icon class="notice-icon">info</mat-icon>
+    <div class="notice-text">
+      Los eventos y hashes son registros locales demostrativos. No certifican autenticidad legal ni representan una blockchain distribuida.
+    </div>
+  </div>
+
+  <app-error-alert
+    *ngIf="errorAccion"
+    [message]="errorAccion"
+    [showRetry]="false"
+  ></app-error-alert>
+
+  <app-loading-overlay [loading]="cargando" message="Cargando información del despacho y su custodia…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarDetalle()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargando && !errorCarga && despacho" class="detalle-grid">
+    <!-- Tarjeta Principal de Información -->
+    <mat-card class="info-card" appearance="outlined">
+      <mat-card-header>
+        <div class="header-with-badge">
+          <mat-card-title>Ficha del traslado</mat-card-title>
+          <app-status-badge [estado]="despacho.estado"></app-status-badge>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="datos-grid">
+          <div class="dato-bloque">
+            <span class="etiqueta">Remito:</span>
+            <span class="valor"><strong>{{ despacho.numeroRemito }}</strong></span>
+          </div>
+          <div class="dato-bloque" *ngIf="despacho.codigoSeguimiento">
+            <span class="etiqueta">Código de seguimiento:</span>
+            <span class="valor">{{ despacho.codigoSeguimiento }}</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Lote asignado:</span>
+            <span class="valor">{{ despacho.codigoLote || 'Lote #' + despacho.loteId }}</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Medicamento:</span>
+            <span class="valor">{{ despacho.medicamentoNombre || '—' }}</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Laboratorio:</span>
+            <span class="valor">{{ despacho.laboratorioNombre || '—' }} (CUIT: {{ despacho.laboratorioCuit || '—' }})</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Distribuidor:</span>
+            <span class="valor">{{ despacho.distribuidorNombre || '—' }} (CUIT: {{ despacho.distribuidorCuit || '—' }})</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Farmacia destino:</span>
+            <span class="valor">{{ despacho.farmaciaDestinoNombre || '—' }} (CUIT: {{ despacho.farmaciaDestinoCuit || '—' }})</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Vehículo (patente):</span>
+            <span class="valor">{{ despacho.vehiculoPatente || 'Sin patente registrada' }}</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Rango térmico permitido:</span>
+            <span class="valor">
+              {{ despacho.temperaturaMinimaPermitida != null ? despacho.temperaturaMinimaPermitida + ' °C' : '—' }} a
+              {{ despacho.temperaturaMaximaPermitida != null ? despacho.temperaturaMaximaPermitida + ' °C' : '—' }}
+            </span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Fecha de salida:</span>
+            <span class="valor">{{ despacho.fechaSalida | fechaAr: 'completo' }}</span>
+          </div>
+          <div class="dato-bloque">
+            <span class="etiqueta">Fecha estimada de entrega:</span>
+            <span class="valor">{{ despacho.fechaEstimadaEntrega | fechaAr: 'completo' }}</span>
+          </div>
+          <div class="dato-bloque" *ngIf="despacho.fechaEntregaReal">
+            <span class="etiqueta">Fecha de entrega real:</span>
+            <span class="valor">{{ despacho.fechaEntregaReal | fechaAr: 'completo' }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="despacho.observaciones" class="observaciones-box">
+          <span class="etiqueta">Observaciones:</span>
+          <p>{{ despacho.observaciones }}</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Línea de Tiempo de Custodia -->
+    <mat-card class="eventos-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Línea de custodia del despacho</mat-card-title>
+        <mat-card-subtitle>Historial cronológico de eventos y hashes demostrativos</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <app-empty-state
+          *ngIf="eventos.length === 0"
+          icon="history"
+          title="Sin eventos de custodia"
+          description="Este despacho aún no registra eventos de custodia."
+        ></app-empty-state>
+
+        <div *ngIf="eventos.length > 0" class="stepper-timeline">
+          <div *ngFor="let ev of eventos" class="step-card">
+            <div class="step-indicator">
+              <div class="step-circle">
+                <mat-icon>timeline</mat-icon>
+              </div>
+            </div>
+
+            <div class="step-body">
+              <div class="step-header">
+                <span class="step-tipo">{{ ev.tipo }}</span>
+                <span class="step-fecha">
+                  <mat-icon>schedule</mat-icon>
+                  {{ ev.fechaHoraEvento | fechaAr: 'completo' }}
+                </span>
+              </div>
+
+              <!-- Textos libres y detalles del actor según permisos -->
+              <div *ngIf="puedeVerTextosInternos" class="actor-info">
+                <p *ngIf="ev.organizacionActorNombre" class="actor-nombre">
+                  <strong>Actor:</strong> {{ ev.organizacionActorNombre }}
+                  <span *ngIf="ev.organizacionActorCuit">(CUIT: {{ ev.organizacionActorCuit }})</span>
+                </p>
+                <p *ngIf="ev.descripcion" class="descripcion">{{ ev.descripcion }}</p>
+              </div>
+
+              <div *ngIf="!puedeVerTextosInternos" class="texto-reservado">
+                <mat-icon>lock</mat-icon>
+                <span>Detalles del actor y notas internas reservadas a ANMAT y laboratorio titular.</span>
+              </div>
+
+              <!-- Hashes demostrativos -->
+              <div class="hashes-box">
+                <div *ngIf="ev.hashAnterior" class="hash-row">
+                  <span class="hash-label">Hash anterior:</span>
+                  <code class="hash-code">{{ ev.hashAnterior }}</code>
+                </div>
+                <div *ngIf="ev.hashEvento" class="hash-row">
+                  <span class="hash-label">Hash evento:</span>
+                  <code class="hash-code">{{ ev.hashEvento }}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,313 @@
+<div class="recepcion-container">
+  <app-page-header
+    title="Recepción y verificación de carga"
+    subtitle="Auditoría de lote, verificación de cadena de frío y recepción conforme en farmacia"
+    icon="local_pharmacy"
+  >
+    <div actions>
+      <button mat-stroked-button (click)="cargarDatos()" [disabled]="cargando">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  </app-page-header>
+
+  <app-loading-overlay [loading]="cargando" message="Consultando despachos en tránsito hacia tu farmacia…"></app-loading-overlay>
+
+  <app-error-alert
+    *ngIf="errorCarga"
+    [message]="errorCarga"
+    (retry)="cargarDatos()"
+  ></app-error-alert>
+
+  <div *ngIf="!cargando && !errorCarga">
+    <mat-tab-group animationDuration="200ms">
+      <!-- Pestaña 1: Auditoría y Recepción -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">inventory</mat-icon>
+          Recepción de carga entrante
+        </ng-template>
+
+        <div class="tab-body">
+          <app-empty-state
+            *ngIf="despachos.length === 0"
+            icon="local_shipping"
+            title="Sin cargas pendientes"
+            description="No hay despachos en estado EN_TRANSITO dirigidos a tu farmacia actualmente."
+          ></app-empty-state>
+
+          <div *ngIf="despachos.length > 0" class="recepcion-layout">
+            <!-- Selector de Despacho / Buscador -->
+            <mat-card class="selector-card" appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Seleccionar despacho en camino</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="selector-controls">
+                  <mat-form-field appearance="outline" class="select-field">
+                    <mat-label>Despacho a auditar</mat-label>
+                    <mat-select
+                      [ngModel]="despachoSeleccionado?.id"
+                      (ngModelChange)="seleccionarDespacho($event)"
+                    >
+                      <mat-option *ngFor="let d of despachosFiltrados" [value]="d.id">
+                        Remito: {{ d.numeroRemito }} — Lote: {{ d.codigoLote || d.loteId }} ({{ d.medicamentoNombre || 'Medicamento' }})
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>Filtrar por remito o lote</mat-label>
+                    <input matInput [(ngModel)]="filtroBusqueda" placeholder="Buscar…" />
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Ficha de Auditoría de Carga -->
+            <app-loading-overlay [loading]="cargandoFicha" message="Cargando historial térmico y custodia…"></app-loading-overlay>
+
+            <app-error-alert
+              *ngIf="errorFicha"
+              [message]="errorFicha"
+              (retry)="seleccionarDespacho(despachoSeleccionado!.id)"
+            ></app-error-alert>
+
+            <div *ngIf="despachoSeleccionado && !cargandoFicha" class="auditoria-grid">
+              <mat-card class="ficha-card" appearance="outlined">
+                <mat-card-header>
+                  <mat-card-title>Ficha técnica de auditoría del lote</mat-card-title>
+                  <mat-card-subtitle>Remito {{ despachoSeleccionado.numeroRemito }}</mat-card-subtitle>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="datos-grid">
+                    <div class="dato-item">
+                      <span class="label">Lote:</span>
+                      <span class="val"><strong>{{ despachoSeleccionado.codigoLote || 'Lote #' + despachoSeleccionado.loteId }}</strong></span>
+                    </div>
+                    <div class="dato-item">
+                      <span class="label">Medicamento:</span>
+                      <span class="val">{{ despachoSeleccionado.medicamentoNombre || '—' }}</span>
+                    </div>
+                    <div class="dato-item">
+                      <span class="label">Distribuidor transportista:</span>
+                      <span class="val">{{ despachoSeleccionado.distribuidorNombre || '—' }}</span>
+                    </div>
+                    <div class="dato-item">
+                      <span class="label">Vehículo (patente):</span>
+                      <span class="val patente">{{ despachoSeleccionado.vehiculoPatente || 'Sin patente' }}</span>
+                    </div>
+                    <div class="dato-item">
+                      <span class="label">Rango térmico exigido:</span>
+                      <span class="val frio">
+                        {{ despachoSeleccionado.temperaturaMinimaPermitida != null ? despachoSeleccionado.temperaturaMinimaPermitida + '°C' : '—' }} a
+                        {{ despachoSeleccionado.temperaturaMaximaPermitida != null ? despachoSeleccionado.temperaturaMaximaPermitida + '°C' : '—' }}
+                      </span>
+                    </div>
+                    <div class="dato-item">
+                      <span class="label">Última temperatura leída:</span>
+                      <span class="val" [class.alert]="ultimaTemperatura?.alertaExcursion">
+                        <strong *ngIf="ultimaTemperatura">{{ ultimaTemperatura.temperatura }} °C</strong>
+                        <span *ngIf="!ultimaTemperatura" class="text-muted">Sin lecturas</span>
+                        <span *ngIf="ultimaTemperatura?.alertaExcursion" class="alerta-pill">¡Excursión!</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Advertencia si hubo excursión -->
+                  <div *ngIf="huboExcursionTermica" class="banner-excursion">
+                    <mat-icon>warning</mat-icon>
+                    <div class="banner-text">
+                      <strong>Cadena de frío comprometida durante el traslado</strong>
+                      <p>Se detectaron temperaturas fuera del rango permitido. El sistema bloquea la recepción en estado CONFORME.</p>
+                    </div>
+                  </div>
+
+                  <!-- Eventos de custodia registrados -->
+                  <div class="eventos-resumen">
+                    <h4>Eventos de custodia en tránsito ({{ eventosCustodia.length }})</h4>
+                    <ul *ngIf="eventosCustodia.length > 0" class="eventos-list">
+                      <li *ngFor="let ev of eventosCustodia">
+                        <span class="ev-tipo">{{ ev.tipo }}</span>
+                        <span class="ev-fecha">{{ ev.fechaHoraEvento | fechaAr: 'completo' }}</span>
+                        <small *ngIf="ev.hashEvento" class="ev-hash">Hash: {{ ev.hashEvento | slice: 0: 16 }}…</small>
+                      </li>
+                    </ul>
+                    <p *ngIf="eventosCustodia.length === 0" class="text-muted">No se registran eventos de custodia previos.</p>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Formulario de Recepción -->
+              <mat-card class="form-card" appearance="outlined">
+                <mat-card-header>
+                  <mat-card-title>Registro de recepción formal</mat-card-title>
+                  <mat-card-subtitle>Ingreso formal al stock de la farmacia</mat-card-subtitle>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <!-- Mensaje de confirmación tras registrar con éxito -->
+                  <div *ngIf="recepcionExitosa" class="confirmacion-exitosa">
+                    <mat-icon>check_circle</mat-icon>
+                    <div class="conf-text">
+                      <strong>¡Carga recepcionada exitosamente!</strong>
+                      <p>
+                        Comprobante: <strong>{{ recepcionExitosa.numeroComprobante }}</strong> ·
+                        Conformidad: <strong>{{ recepcionExitosa.estadoConformidad }}</strong> ·
+                        El despacho pasó a estado <strong>RECIBIDO</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <app-error-alert
+                    *ngIf="errorEnvio"
+                    [message]="errorEnvio"
+                    [fieldErrors]="fieldErrors"
+                    [showRetry]="false"
+                  ></app-error-alert>
+
+                  <form [formGroup]="form" (ngSubmit)="guardarRecepcion()" class="recepcion-form">
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Número de comprobante interno de recepción</mat-label>
+                        <input matInput formControlName="numeroComprobante" placeholder="Ej: REC-2026-FARM-001" required />
+                        <mat-error *ngIf="form.get('numeroComprobante')?.hasError('required')">El comprobante es obligatorio</mat-error>
+                        <mat-error *ngIf="fieldErrors['numeroComprobante']">{{ fieldErrors['numeroComprobante'] }}</mat-error>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Farmacéutico o responsable receptor</mat-label>
+                        <input matInput formControlName="farmaceuticoResponsable" placeholder="Nombre o legajo profesional" />
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Cadena de frío intacta -->
+                    <div class="form-row radio-group-box">
+                      <label class="radio-label">¿La cadena de frío llegó intacta?</label>
+                      <mat-radio-group formControlName="cadenaFrioIntacta">
+                        <mat-radio-button [value]="true">Sí, cadena de frío intacta</mat-radio-button>
+                        <mat-radio-button [value]="false">No, cadena de frío vulnerada</mat-radio-button>
+                      </mat-radio-group>
+                    </div>
+
+                    <!-- Estado de conformidad -->
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Dictamen de conformidad</mat-label>
+                        <mat-select formControlName="estadoConformidad" required>
+                          <mat-option value="CONFORME" [disabled]="!puedeMarcarConforme">
+                            CONFORME (Cadena de frío intacta requerida)
+                          </mat-option>
+                          <mat-option value="OBSERVADA">OBSERVADA (Con desvíos menores)</mat-option>
+                          <mat-option value="RECHAZADA">RECHAZADA (No apto para dispensación)</mat-option>
+                        </mat-select>
+                        <mat-hint *ngIf="!puedeMarcarConforme" class="hint-warn">
+                          La opción CONFORME no está permitida debido a excursión térmica o cadena de frío no intacta.
+                        </mat-hint>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Observaciones de recepción</mat-label>
+                        <textarea matInput formControlName="observaciones" rows="3" placeholder="Detalle de precintos, estado físico de cajas o motivos de observación"></textarea>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-actions">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="submit"
+                        [disabled]="enviando || form.invalid"
+                      >
+                        <mat-icon *ngIf="enviando">hourglass_empty</mat-icon>
+                        <mat-icon *ngIf="!enviando">check</mat-icon>
+                        {{ enviando ? 'Registrando recepción…' : 'Confirmar recepción en farmacia' }}
+                      </button>
+                    </div>
+                  </form>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Pestaña 2: Historial de recepciones -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">history</mat-icon>
+          Historial de recepciones
+        </ng-template>
+
+        <div class="tab-body">
+          <app-empty-state
+            *ngIf="recepcionesHistorial.length === 0"
+            icon="history"
+            title="Sin recepciones registradas"
+            description="Tu farmacia aún no ha recepcionado despachos."
+          ></app-empty-state>
+
+          <div *ngIf="recepcionesHistorial.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="recepcionesHistorial" class="mat-elevation-z1">
+              <ng-container matColumnDef="numeroComprobante">
+                <th mat-header-cell *matHeaderCellDef>Comprobante</th>
+                <td mat-cell *matCellDef="let r"><strong>{{ r.numeroComprobante }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="remito">
+                <th mat-header-cell *matHeaderCellDef>Despacho / Remito</th>
+                <td mat-cell *matCellDef="let r">{{ r.numeroRemito || 'Despacho #' + r.despachoLogisticoId }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="fechaHora">
+                <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
+                <td mat-cell *matCellDef="let r">{{ r.fechaHoraRecepcion | fechaAr: 'completo' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="estadoConformidad">
+                <th mat-header-cell *matHeaderCellDef>Conformidad</th>
+                <td mat-cell *matCellDef="let r">
+                  <span class="conformidad-pill" [ngClass]="r.estadoConformidad.toLowerCase()">
+                    {{ r.estadoConformidad }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="cadenaFrio">
+                <th mat-header-cell *matHeaderCellDef>Cadena de frío</th>
+                <td mat-cell *matCellDef="let r">
+                  <span *ngIf="r.cadenaFrioIntacta" class="frio-ok">
+                    <mat-icon>check_circle</mat-icon> Intacta
+                  </span>
+                  <span *ngIf="!r.cadenaFrioIntacta" class="frio-vulnerada">
+                    <mat-icon>warning</mat-icon> Vulnerada
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="farmaceutico">
+                <th mat-header-cell *matHeaderCellDef>Receptor</th>
+                <td mat-cell *matCellDef="let r">{{ r.farmaceuticoResponsable || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="observaciones">
+                <th mat-header-cell *matHeaderCellDef>Observaciones</th>
+                <td mat-cell *matCellDef="let r">{{ r.observaciones || '—' }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsHistorial"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsHistorial"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>
