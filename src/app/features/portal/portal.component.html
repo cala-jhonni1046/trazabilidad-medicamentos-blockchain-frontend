@@ -16,10 +16,17 @@
         <p>Portal Público de Autenticidad del Medicamento</p>
       </div>
     </div>
-    <a mat-stroked-button routerLink="/login" class="link-staff">
-      <mat-icon>login</mat-icon>
-      Soy personal autorizado
-    </a>
+    @if (session.isAuthenticated()) {
+      <button mat-stroked-button type="button" class="link-staff" (click)="cerrarSesion()">
+        <mat-icon>logout</mat-icon>
+        Cerrar sesión
+      </button>
+    } @else {
+      <a mat-stroked-button routerLink="/login" class="link-staff">
+        <mat-icon>login</mat-icon>
+        Soy personal autorizado
+      </a>
+    }
   </header>
 
   <main class="portal-contenido">
