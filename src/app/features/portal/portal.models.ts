@@ -1,7 +1,7 @@
 /**
  * Tipos propios de F30, reflejando los DTO reales del backend (docs/api.md, sección
- * "Consulta Pública por Código QR" y "Reportes Ciudadanos"). No se amplía el servicio
- * legado core/medicamentos-api.service.ts: este feature tiene su propio servicio y tipos.
+ * "Consulta Pública por Código QR" y "Reportes Ciudadanos"). Este feature tiene su
+ * propio servicio y tipos.
  */
 
 /** Proyección pública del medicamento dentro de ConsultaPublicaQRResponseDTO. */

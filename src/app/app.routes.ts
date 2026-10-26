@@ -2,10 +2,6 @@ import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { authGuard } from './core/session/auth.guards';
 
-// Pantallas legadas — se mantienen hasta que cada dueño las migre (F11, F13, F20)
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { TrazabilidadComponent } from './pages/trazabilidad/trazabilidad.component';
-
 export const routes: Routes = [
   // ── Login (público) ───────────────────────────────────────────────────────
   {
@@ -29,14 +25,11 @@ export const routes: Routes = [
           ),
       },
 
-      // ── LEGACY: pantallas existentes (no borrar hasta migración) ───────
-      { path: 'dashboard', component: DashboardComponent },
       {
         path: 'lotes',
         loadChildren: () =>
           import('./features/lotes/lotes.routes').then((m) => m.LOTES_ROUTES),
       },
-      { path: 'trazabilidad', component: TrazabilidadComponent },
 
       // ── Features por lazy loading (UN loadChildren por feature) ────────
       {

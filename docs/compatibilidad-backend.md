@@ -1,5 +1,7 @@
 # Correspondencia de pantallas con el backend
 
+> Nota (F99): este documento describe el estado histórico de `release/profesor` (tres pantallas). Las pantallas actuales por rol y el guion de demostración están en [guion-demo.md](guion-demo.md); la verificación del cierre, en [verificacion-f99.md](verificacion-f99.md).
+
 Revisión de `release/profesor` contra el OpenAPI 3.1 entregado por el profesor (21 de octubre de 2026). El frontend tiene tres pantallas.
 
 | Pantalla | Contrato utilizado | Ajuste aplicado |

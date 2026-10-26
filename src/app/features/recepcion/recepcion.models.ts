@@ -1,4 +1,5 @@
-export type EstadoConformidad = 'CONFORME' | 'OBSERVADA' | 'RECHAZADA';
+import type { EstadoConformidad } from '../../shared/models/dominio';
+export type { EstadoConformidad };
 
 export interface RecepcionFarmaciaRequest {
   numeroComprobante: string;

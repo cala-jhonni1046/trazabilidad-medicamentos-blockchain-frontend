@@ -9,7 +9,7 @@ import {
   UnidadTrazableLite,
 } from './reportes.models';
 
-/** Servicio propio de F31. No amplía core/medicamentos-api.service.ts (legado). */
+/** Servicio propio de F31. */
 @Injectable({ providedIn: 'root' })
 export class ReportesApiService {
   private readonly http = inject(HttpClient);

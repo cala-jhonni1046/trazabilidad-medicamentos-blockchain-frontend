@@ -1,5 +1,6 @@
+import type { TipoOrganizacion } from '../../shared/models/dominio';
+export type { TipoOrganizacion };
 /** Refleja TipoOrganizacion del backend. */
-export type TipoOrganizacion = 'LABORATORIO' | 'DISTRIBUIDOR' | 'FARMACIA';
 
 /** Refleja OrganizacionResponseDTO del backend. */
 export interface OrganizacionDto {
