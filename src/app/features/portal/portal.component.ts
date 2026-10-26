@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { SessionService } from '../../core/session/session.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -56,6 +57,8 @@ export class PortalComponent {
   private readonly api = inject(PortalApiService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  readonly session = inject(SessionService);
 
   readonly resumenConfig = RESUMEN_CONFIG;
 
@@ -67,6 +70,12 @@ export class PortalComponent {
   private ultimaConsultaOk = false;
   /** Confirmación visible tras un reporte recién enviado desde esta pantalla. */
   reporteConfirmadoId = signal<number | null>(null);
+
+  /** Un paciente con sesión simulada vuelve al ingreso; sin esto /login lo devolvía al portal. */
+  cerrarSesion(): void {
+    this.session.cerrarSesion();
+    void this.router.navigate(['/login']);
+  }
 
   consultar(): void {
     if (this.consultando) return;
