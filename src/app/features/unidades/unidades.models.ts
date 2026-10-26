@@ -1,4 +1,5 @@
-export type EstadoUnidad = 'DISPONIBLE' | 'DISPENSADA' | 'BLOQUEADA' | string;
+import type { EstadoUnidad } from '../../shared/models/dominio';
+export type { EstadoUnidad };
 
 export interface UnidadTrazableDto {
   id: number;

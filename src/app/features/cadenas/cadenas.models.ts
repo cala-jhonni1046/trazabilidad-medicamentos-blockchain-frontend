@@ -1,6 +1,7 @@
+import type { EstadoEnlace } from '../../shared/models/dominio';
+export type { EstadoEnlace };
 /** Tipos propios de F33, reflejando docs/api.md. */
 
-export type EstadoEnlace = 'PENDIENTE' | 'ACTIVO' | 'RECHAZADO';
 
 /** Refleja EnlaceCUITResponseDTO. */
 export interface EnlaceDto {

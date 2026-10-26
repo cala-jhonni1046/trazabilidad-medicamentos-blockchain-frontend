@@ -1,5 +1,5 @@
-export type TipoOrganizacion = 'LABORATORIO' | 'DISTRIBUIDOR' | 'FARMACIA';
-export type EstadoEnlace = 'PENDIENTE' | 'ACTIVO' | 'RECHAZADO';
+import type { TipoOrganizacion, EstadoEnlace } from '../../shared/models/dominio';
+export type { TipoOrganizacion, EstadoEnlace };
 
 /** Organización tal como la devuelve GET /api/organizaciones/cuit/{cuit}. */
 export interface OrganizacionLite {

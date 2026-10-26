@@ -1,43 +1,62 @@
 # MediChain — frontend académico
 
-Interfaz Angular para consultar datos del backend de trazabilidad de medicamentos. La rama `release/profesor` contiene tres pantallas: panel general, lotes y trazabilidad. Utilizan los endpoints documentados en el OpenAPI del backend; la interfaz no simula una testnet, autenticación ni telemetría en tiempo real.
+Interfaz Angular 22 de un MVP demostrativo de trazabilidad de medicamentos con cadena de frío. Consume el backend Spring Boot (`/api`) y organiza las pantallas por rol: SUPERADMIN, ANMAT, LABORATORIO, DISTRIBUIDOR, FARMACIA y PACIENTE.
+
+> Proyecto académico. No hay autenticación real, la "blockchain" es demostrativa (hashes encadenados en base de datos) y la cuarentena se abre y se libera manualmente. No cargar datos personales reales.
 
 ## Ejecutar localmente
 
-Requiere Node.js y npm compatibles con Angular 22, y el backend Spring Boot escuchando en `http://localhost:8080`.
+Requiere Node.js compatible con Angular 22 y el backend en `http://localhost:8080` **con el perfil `demo`** (carga los usuarios y datos de ejemplo):
 
 ```bash
+# backend
+./mvnw spring-boot:run "-Dspring-boot.run.profiles=demo"
+
+# frontend
 npm install
 npm start
 ```
 
-Abrir `http://localhost:4200`. El proxy de desarrollo en `proxy.conf.json` envía `/api` a `http://localhost:8080`. Para otro puerto de backend, ajustar ese archivo. En producción, el servidor que aloje el frontend debe enviar `/api` al backend; el proxy de Angular solo se aplica durante `npm start`.
+Abrir `http://localhost:4200`. El proxy de `proxy.conf.json` envía `/api` al backend; solo aplica con `npm start`.
 
-## Pantallas y contrato
+## Cómo se ingresa (sesión simulada)
 
-- Dashboard: `GET /api/lotes`, `/api/despachos-logisticos`, `/api/telemetrias-temperatura` y `/api/cuarentenas?estado=ABIERTA`. Calcula los contadores con las respuestas y muestra las últimas lecturas registradas.
-- Lotes: lista con `GET /api/lotes`; formulario de alta individual con `POST /api/lotes`. Las opciones se obtienen de `/api/medicamentos` y `/api/organizaciones` filtrando laboratorios. El backend asigna `CREADO` al lote.
-- Trazabilidad: despachos de un lote con `GET /api/despachos-logisticos?loteId=...`, eventos con `GET /api/despachos-logisticos/{id}/eventos` y consulta pública con `GET /api/public/consulta-qr/{codigoQr}`.
+No hay contraseñas: en `/login` se elige un usuario del backend (y, si corresponde, su organización). Los usuarios del seed son:
 
-Los errores H0 se muestran en pantalla. El backend actual no autentica usuarios; no ingresar datos personales reales. Los hashes de custodia son demostrativos y no prueban autenticidad ni una blockchain distribuida.
+| Usuario | Rol |
+|---|---|
+| `superadmin@medichain.demo` | SUPERADMIN |
+| `inspector@medichain.demo` | ANMAT (inspector habilitado) |
+| `laboratorio@medichain.demo` | LABORATORIO |
+| `distribuidor@medichain.demo` | DISTRIBUIDOR |
+| `farmacia@medichain.demo` | FARMACIA |
+| `paciente@medichain.demo` | PACIENTE |
 
-## Verificar las pantallas
+Un usuario ANMAT solo puede aprobar/rechazar enlaces si tiene un perfil de inspector **habilitado**. La sesión vive en `sessionStorage`.
+
+## Estructura
+
+Cada feature vive en `src/app/features/<feature>/` con sus rutas (`*.routes.ts`, carga diferida y `roleGuard`) y su ítem de menú (`*.menu.ts`), que se registra en `core/navigation/menu.registry.ts`. Lo compartido está en `src/app/shared` (componentes, pipe `fechaAr`, utilidades de CUIT) y `src/app/core` (sesión, HTTP, navegación). Convenciones: [docs/convenciones-frontend.md](docs/convenciones-frontend.md).
+
+## Guion de la demostración y mapa de pantallas
+
+Ver [docs/guion-demo.md](docs/guion-demo.md): recorrido paso a paso por rol con los usuarios del seed, mapa de pantallas por rol y limitaciones conocidas.
+
+## Verificación
 
 ```bash
-npm test -- --watch=false
 npm run build
+npm test -- --watch=false
+npm run test:integracion   # opcional, con frontend y backend (perfil demo) iniciados
 ```
 
-Con frontend y backend iniciados, ejecutar en otra terminal:
+Estado de compatibilidad con el contrato: [docs/compatibilidad-backend.md](docs/compatibilidad-backend.md).
 
-```bash
-npm run test:integracion
-```
+## Limitaciones conocidas
 
-La integración usa `http://localhost:4200/api` y comprueba las respuestas reales a través del proxy, incluido crear y eliminar su propio lote de prueba. Necesita un medicamento y un laboratorio previamente registrados. Para otro puerto del frontend:
-
-```bash
-API_BASE_URL=http://127.0.0.1:4300/api npm run test:integracion
-```
-
-Los resultados y el alcance están en [docs/compatibilidad-backend.md](docs/compatibilidad-backend.md).
+- Sin autenticación ni autorización real: el rol lo determina el usuario elegido en el login.
+- Blockchain demostrativa: los hashes de custodia no prueban autenticidad ni una red distribuida.
+- La cuarentena es manual (ANMAT la abre y la libera); una excursión de temperatura no la dispara sola.
+- El rechazo de un enlace no registra inspector ni fecha (el contrato actual no lo guarda).
+- La relación Usuario ↔ Organización se elige en el login; el backend no la persiste.
+- El simulador de telemetría genera lecturas de prueba, no datos de sensores reales.

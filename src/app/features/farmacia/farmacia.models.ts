@@ -1,6 +1,7 @@
+import type { EstadoConformidad } from '../../shared/models/dominio';
+export type { EstadoConformidad };
 /** Tipos propios de F32 (dashboard de farmacia), reflejando docs/api.md. */
 
-export type EstadoConformidad = 'CONFORME' | 'OBSERVADA' | 'RECHAZADA';
 
 /** Proyección mínima de RecepcionFarmaciaResponseDTO. */
 export interface RecepcionLite {

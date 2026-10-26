@@ -1,3 +1,5 @@
+import type { EstadoUnidad } from '../../shared/models/dominio';
+export type { EstadoUnidad };
 export type EstadoLote =
   | 'CREADO'
   | 'EN_TRANSITO'
@@ -30,7 +32,6 @@ export interface LoteRequest {
   fechaHoraFabricacion?: string | null;
 }
 
-export type EstadoUnidad = 'DISPONIBLE' | 'DISPENSADA' | 'BLOQUEADA' | string;
 
 export interface UnidadResumen {
   id: number;

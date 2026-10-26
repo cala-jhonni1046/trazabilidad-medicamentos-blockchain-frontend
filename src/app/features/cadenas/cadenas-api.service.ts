@@ -10,7 +10,7 @@ import {
   RegistroBlockchainRequest,
 } from './cadenas.models';
 
-/** Servicio propio de F33. No amplía core/medicamentos-api.service.ts (legado). */
+/** Servicio propio de F33. */
 @Injectable({ providedIn: 'root' })
 export class CadenasApiService {
   private readonly http = inject(HttpClient);

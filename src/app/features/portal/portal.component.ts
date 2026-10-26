@@ -31,7 +31,7 @@ const RESUMEN_CONFIG: Record<ResultadoResumen, { label: string; icono: string; c
 /**
  * Portal público (F30): consulta de QR sin sesión y reporte ciudadano.
  * Es el ROLE_HOME de PACIENTE, pero no requiere sesión (ruta pública).
- * Migra la consulta pública de pages/trazabilidad (sin importarla).
+ * Consulta pública de una unidad por código QR.
  */
 @Component({
   selector: 'app-portal',

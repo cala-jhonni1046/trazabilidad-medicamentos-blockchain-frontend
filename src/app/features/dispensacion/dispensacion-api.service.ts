@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DispensacionRequest, DispensacionResponse, LoteLite, UnidadTrazableLite } from './dispensacion.models';
 
-/** Servicio propio de F32 (dispensación). No amplía core/medicamentos-api.service.ts. */
+/** Servicio propio de F32 (dispensación). */
 @Injectable({ providedIn: 'root' })
 export class DispensacionApiService {
   private readonly http = inject(HttpClient);
