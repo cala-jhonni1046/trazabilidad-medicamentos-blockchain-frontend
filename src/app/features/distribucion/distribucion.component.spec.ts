@@ -51,8 +51,8 @@ describe('Distribucion Components', () => {
         { id: 1, numeroRemito: 'R-01', distribuidorId: 15, loteId: 10, estado: 'PREPARADO' },
       ]);
 
-      expect(fixture.componentInstance.cargas.length).toBe(1);
-      expect(fixture.componentInstance.cargas[0].numeroRemito).toBe('R-01');
+      expect(fixture.componentInstance.cargas().length).toBe(1);
+      expect(fixture.componentInstance.cargas()[0].numeroRemito).toBe('R-01');
     });
   });
 
@@ -85,8 +85,8 @@ describe('Distribucion Components', () => {
 
       // No debe enviar evento a la api
       httpMock.expectNone('/api/despachos-logisticos/1/eventos');
-      expect(fixture.componentInstance.resultado?.valido).toBe(false);
-      expect(fixture.componentInstance.resultado?.motivo).toContain('Lote #20');
+      expect(fixture.componentInstance.resultado()?.valido).toBe(false);
+      expect(fixture.componentInstance.resultado()?.motivo).toContain('Lote #20');
     });
 
     it('acepta un QR correcto y registra evento CUSTODIA_ASUMIDA', () => {
@@ -120,8 +120,8 @@ describe('Distribucion Components', () => {
       expect(reqEvt.request.body.tipo).toBe('CUSTODIA_ASUMIDA');
       reqEvt.flush({ id: 50, tipo: 'CUSTODIA_ASUMIDA' });
 
-      expect(fixture.componentInstance.resultado?.valido).toBe(true);
-      expect(fixture.componentInstance.resultado?.eventoRegistrado).toBe(true);
+      expect(fixture.componentInstance.resultado()?.valido).toBe(true);
+      expect(fixture.componentInstance.resultado()?.eventoRegistrado).toBe(true);
     });
   });
 

@@ -60,12 +60,12 @@ describe('Cuarentenas Components', () => {
       httpMock.expectOne('/api/enlaces-cuit?estado=ACTIVO').flush([{ id: 1, laboratorioId: 5, estado: 'ACTIVO' }]);
       httpMock.expectOne('/api/reportes-ciudadanos?estado=PENDIENTE').flush([{ id: 1 }]);
 
-      expect(fixture.componentInstance.lotesEnCuarentenaCount).toBe(1);
-      expect(fixture.componentInstance.cadenasActivasCount).toBe(1);
-      expect(fixture.componentInstance.reportesPendientesCount).toBe(1);
-      expect(fixture.componentInstance.lotesConTelemetria.length).toBe(1);
-      expect(fixture.componentInstance.lotesConTelemetria[0].estado).toBe('EN_CUARENTENA');
-      expect(fixture.componentInstance.puedeOperar).toBe(true);
+      expect(fixture.componentInstance.lotesEnCuarentenaCount()).toBe(1);
+      expect(fixture.componentInstance.cadenasActivasCount()).toBe(1);
+      expect(fixture.componentInstance.reportesPendientesCount()).toBe(1);
+      expect(fixture.componentInstance.lotesConTelemetria().length).toBe(1);
+      expect(fixture.componentInstance.lotesConTelemetria()[0].estado).toBe('EN_CUARENTENA');
+      expect(fixture.componentInstance.puedeOperar()).toBe(true);
     });
 
     it('un inspector suspendido no puede operar resoluciones', () => {
@@ -85,7 +85,7 @@ describe('Cuarentenas Components', () => {
       httpMock.expectOne('/api/enlaces-cuit?estado=ACTIVO').flush([]);
       httpMock.expectOne('/api/reportes-ciudadanos?estado=PENDIENTE').flush([]);
 
-      expect(fixture.componentInstance.puedeOperar).toBe(false);
+      expect(fixture.componentInstance.puedeOperar()).toBe(false);
     });
   });
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -42,11 +42,13 @@ export class DistribucionDashboardComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
 
-  cargas: DespachoLogistico[] = [];
-  cargando = false;
-  errorCarga: string | null = null;
-  accionEnCursoId: number | null = null;
-  errorAccion: string | null = null;
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly cargas = signal<DespachoLogistico[]>([]);
+  readonly cargando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly accionEnCursoId = signal<number | null>(null);
+  readonly errorAccion = signal<string | null>(null);
 
   readonly displayedColumns: string[] = [
     'numeroRemito',
@@ -65,21 +67,21 @@ export class DistribucionDashboardComponent implements OnInit {
   cargarCargasAsignadas(): void {
     const org = this.session.organizacion();
     if (!org) {
-      this.errorCarga = 'No se ha detectado una organización distribuidora en la sesión.';
+      this.errorCarga.set('No se ha detectado una organización distribuidora en la sesión.');
       return;
     }
 
-    this.cargando = true;
-    this.errorCarga = null;
+    this.cargando.set(true);
+    this.errorCarga.set(null);
 
     this.api.getDespachosDistribuidor(org.id).subscribe({
       next: (data) => {
-        this.cargas = data;
-        this.cargando = false;
+        this.cargas.set(data);
+        this.cargando.set(false);
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargando = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargando.set(false);
       },
     });
   }
@@ -98,8 +100,8 @@ export class DistribucionDashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmado) => {
       if (!confirmado) return;
 
-      this.accionEnCursoId = despacho.id;
-      this.errorAccion = null;
+      this.accionEnCursoId.set(despacho.id);
+      this.errorAccion.set(null);
 
       this.api
         .iniciarDespacho(despacho.id, {
@@ -107,12 +109,14 @@ export class DistribucionDashboardComponent implements OnInit {
         })
         .subscribe({
           next: (actualizado) => {
-            despacho.estado = actualizado.estado;
-            this.accionEnCursoId = null;
+            this.cargas.update((lista) =>
+              lista.map((d) => (d.id === despacho.id ? { ...d, estado: actualizado.estado } : d)),
+            );
+            this.accionEnCursoId.set(null);
           },
           error: (err) => {
-            this.accionEnCursoId = null;
-            this.errorAccion = mensajeApi(err);
+            this.accionEnCursoId.set(null);
+            this.errorAccion.set(mensajeApi(err));
           },
         });
     });

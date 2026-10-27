@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -46,94 +46,96 @@ export class TelemetriaMapaComponent implements OnInit {
   private readonly api = inject(TelemetriaApiService);
   readonly session = inject(SessionService);
 
-  despachos: DespachoLogistico[] = [];
-  despachoSeleccionadoId: number | null = null;
-  despachoSeleccionado?: DespachoLogistico;
+  // App zoneless: todo estado que se lee en la plantilla y se modifica dentro de un
+  // subscribe/next/error/finalize debe ser signal; un campo común no repinta la vista.
+  readonly despachos = signal<DespachoLogistico[]>([]);
+  readonly despachoSeleccionadoId = signal<number | null>(null);
+  readonly despachoSeleccionado = signal<DespachoLogistico | null>(null);
 
-  lecturasGps: TelemetriaGPS[] = [];
-  lecturasTemp: TelemetriaTemperatura[] = [];
+  readonly lecturasGps = signal<TelemetriaGPS[]>([]);
+  readonly lecturasTemp = signal<TelemetriaTemperatura[]>([]);
 
-  cargandoDespachos = false;
-  cargandoLecturas = false;
-  errorCarga: string | null = null;
-  errorLecturas: string | null = null;
+  readonly cargandoDespachos = signal(false);
+  readonly cargandoLecturas = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly errorLecturas = signal<string | null>(null);
+
+  readonly esAnmatOSuperadmin = computed(() => {
+    const rol = this.session.rol();
+    return rol === 'ANMAT' || rol === 'SUPERADMIN';
+  });
+
+  readonly ultimaPosicion = computed<TelemetriaGPS | null>(() => {
+    const lecturas = this.lecturasGps();
+    return lecturas.length > 0 ? lecturas[lecturas.length - 1] : null;
+  });
+
+  readonly ultimaTemperatura = computed<TelemetriaTemperatura | null>(() => {
+    const lecturas = this.lecturasTemp();
+    return lecturas.length > 0 ? lecturas[lecturas.length - 1] : null;
+  });
 
   ngOnInit(): void {
     this.cargarDespachosEnTransito();
   }
 
-  get esAnmatOSuperadmin(): boolean {
-    const rol = this.session.rol();
-    return rol === 'ANMAT' || rol === 'SUPERADMIN';
-  }
-
   cargarDespachosEnTransito(): void {
-    this.cargandoDespachos = true;
-    this.errorCarga = null;
+    this.cargandoDespachos.set(true);
+    this.errorCarga.set(null);
 
     this.api.getDespachosEnTransito().subscribe({
       next: (data) => {
         const orgId = this.session.organizacion()?.id;
         const rol = this.session.rol();
 
-        if (rol === 'LABORATORIO' && orgId) {
-          this.despachos = data.filter((d) => d.laboratorioId === orgId);
-        } else {
-          this.despachos = data;
-        }
+        const despachos = rol === 'LABORATORIO' && orgId ? data.filter((d) => d.laboratorioId === orgId) : data;
+        this.despachos.set(despachos);
+        this.cargandoDespachos.set(false);
 
-        this.cargandoDespachos = false;
-
-        if (this.despachos.length > 0) {
-          this.seleccionarDespacho(this.despachos[0].id);
+        if (despachos.length > 0) {
+          this.seleccionarDespacho(despachos[0].id);
         }
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargandoDespachos = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargandoDespachos.set(false);
       },
     });
   }
 
   seleccionarDespacho(id: number): void {
-    this.despachoSeleccionadoId = id;
-    this.despachoSeleccionado = this.despachos.find((d) => d.id === id);
-    if (this.despachoSeleccionado) {
+    this.despachoSeleccionadoId.set(id);
+    const seleccionado = this.despachos().find((d) => d.id === id) ?? null;
+    this.despachoSeleccionado.set(seleccionado);
+    if (seleccionado) {
       this.cargarLecturas(id);
     }
   }
 
   cargarLecturas(despachoId: number): void {
-    this.cargandoLecturas = true;
-    this.errorLecturas = null;
+    this.cargandoLecturas.set(true);
+    this.errorLecturas.set(null);
 
     forkJoin({
       gps: this.api.getLecturasGps(despachoId),
       temp: this.api.getLecturasTemperatura(despachoId),
     }).subscribe({
       next: ({ gps, temp }) => {
-        this.lecturasGps = gps.sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
-        this.lecturasTemp = temp.sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
-        this.cargandoLecturas = false;
+        this.lecturasGps.set([...gps].sort((a, b) => a.fechaHora.localeCompare(b.fechaHora)));
+        this.lecturasTemp.set([...temp].sort((a, b) => a.fechaHora.localeCompare(b.fechaHora)));
+        this.cargandoLecturas.set(false);
       },
       error: (err) => {
-        this.errorLecturas = mensajeApi(err);
-        this.cargandoLecturas = false;
+        this.errorLecturas.set(mensajeApi(err));
+        this.cargandoLecturas.set(false);
       },
     });
   }
 
   recargarLecturas(): void {
-    if (this.despachoSeleccionadoId) {
-      this.cargarLecturas(this.despachoSeleccionadoId);
+    const id = this.despachoSeleccionadoId();
+    if (id) {
+      this.cargarLecturas(id);
     }
-  }
-
-  get ultimaPosicion(): TelemetriaGPS | null {
-    return this.lecturasGps.length > 0 ? this.lecturasGps[this.lecturasGps.length - 1] : null;
-  }
-
-  get ultimaTemperatura(): TelemetriaTemperatura | null {
-    return this.lecturasTemp.length > 0 ? this.lecturasTemp[this.lecturasTemp.length - 1] : null;
   }
 }

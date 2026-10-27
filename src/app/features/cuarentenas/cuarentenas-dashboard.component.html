@@ -5,7 +5,7 @@
     icon="security"
   >
     <div actions>
-      <button mat-stroked-button (click)="cargarDashboard()" [disabled]="cargando">
+      <button mat-stroked-button (click)="cargarDashboard()" [disabled]="cargando()">
         <mat-icon>refresh</mat-icon>
         Actualizar datos
       </button>
@@ -19,34 +19,34 @@
         <mat-icon>link</mat-icon>
       </div>
       <div class="metric-info">
-        <span class="metric-num">{{ cadenasActivasCount }}</span>
+        <span class="metric-num">{{ cadenasActivasCount() }}</span>
         <span class="metric-title">Cadenas activas (Enlaces CUIT)</span>
       </div>
     </div>
 
-    <div class="metric-card" [class.danger]="lotesEnCuarentenaCount > 0">
-      <div class="metric-icon" [ngClass]="lotesEnCuarentenaCount > 0 ? 'danger' : 'neutral'">
+    <div class="metric-card" [class.danger]="lotesEnCuarentenaCount() > 0">
+      <div class="metric-icon" [ngClass]="lotesEnCuarentenaCount() > 0 ? 'danger' : 'neutral'">
         <mat-icon>lock</mat-icon>
       </div>
       <div class="metric-info">
-        <span class="metric-num">{{ lotesEnCuarentenaCount }}</span>
+        <span class="metric-num">{{ lotesEnCuarentenaCount() }}</span>
         <span class="metric-title">Lotes en cuarentena abierta</span>
       </div>
     </div>
 
-    <div class="metric-card" [class.warning]="reportesPendientesCount > 0">
-      <div class="metric-icon" [ngClass]="reportesPendientesCount > 0 ? 'warning' : 'neutral'">
+    <div class="metric-card" [class.warning]="reportesPendientesCount() > 0">
+      <div class="metric-icon" [ngClass]="reportesPendientesCount() > 0 ? 'warning' : 'neutral'">
         <mat-icon>report</mat-icon>
       </div>
       <div class="metric-info">
-        <span class="metric-num">{{ reportesPendientesCount }}</span>
+        <span class="metric-num">{{ reportesPendientesCount() }}</span>
         <span class="metric-title">Reportes ciudadanos pendientes</span>
       </div>
     </div>
   </div>
 
   <!-- Aviso de inspector inhabilitado/suspendido -->
-  <div *ngIf="!puedeOperar" class="alerta-suspendido">
+  <div *ngIf="!puedeOperar()" class="alerta-suspendido">
     <mat-icon>warning</mat-icon>
     <div class="alerta-texto">
       <strong>Perfil de inspector no habilitado para resolución:</strong>
@@ -55,20 +55,20 @@
   </div>
 
   <app-error-alert
-    *ngIf="errorAccion"
-    [message]="errorAccion"
+    *ngIf="errorAccion()"
+    [message]="errorAccion()"
     [showRetry]="false"
   ></app-error-alert>
 
-  <app-loading-overlay [loading]="cargando" message="Cargando panel de control de cuarentenas y telemetría…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargando()" message="Cargando panel de control de cuarentenas y telemetría…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarDashboard()"
   ></app-error-alert>
 
-  <div *ngIf="!cargando && !errorCarga" class="tabs-container">
+  <div *ngIf="!cargando() && !errorCarga()" class="tabs-container">
     <mat-tab-group animationDuration="200ms">
       <!-- Pestaña 1: Lotes y Control de Telemetría -->
       <mat-tab>
@@ -79,14 +79,14 @@
 
         <div class="tab-body">
           <app-empty-state
-            *ngIf="lotesConTelemetria.length === 0"
+            *ngIf="lotesConTelemetria().length === 0"
             icon="inventory_2"
             title="Sin lotes registrados"
             description="No se registran lotes en el sistema para supervisión."
           ></app-empty-state>
 
-          <div *ngIf="lotesConTelemetria.length > 0" class="table-responsive">
-            <table mat-table [dataSource]="lotesConTelemetria" class="mat-elevation-z1">
+          <div *ngIf="lotesConTelemetria().length > 0" class="table-responsive">
+            <table mat-table [dataSource]="lotesConTelemetria()" class="mat-elevation-z1">
               <!-- Código y Fármaco -->
               <ng-container matColumnDef="codigoLote">
                 <th mat-header-cell *matHeaderCellDef>Código / Medicamento</th>
@@ -142,7 +142,7 @@
                     mat-flat-button
                     color="warn"
                     (click)="abrirCuarentena(row)"
-                    [disabled]="!puedeOperar || accionEnCurso"
+                    [disabled]="!puedeOperar() || accionEnCurso()"
                     title="Abrir cuarentena recomendada por excursión"
                   >
                     <mat-icon>report_problem</mat-icon>
@@ -155,7 +155,7 @@
                     mat-stroked-button
                     color="warn"
                     (click)="abrirCuarentena(row)"
-                    [disabled]="!puedeOperar || accionEnCurso"
+                    [disabled]="!puedeOperar() || accionEnCurso()"
                     title="Poner lote en cuarentena"
                   >
                     <mat-icon>lock</mat-icon>
@@ -168,7 +168,7 @@
                       mat-stroked-button
                       color="primary"
                       (click)="resolverCuarentena(cua, 'LIBERAR', row.codigoLote)"
-                      [disabled]="!puedeOperar || accionEnCurso"
+                      [disabled]="!puedeOperar() || accionEnCurso()"
                       title="Liberar lote de cuarentena"
                     >
                       <mat-icon>lock_open</mat-icon>
@@ -178,7 +178,7 @@
                       mat-stroked-button
                       color="warn"
                       (click)="resolverCuarentena(cua, 'MANTENER', row.codigoLote)"
-                      [disabled]="!puedeOperar || accionEnCurso"
+                      [disabled]="!puedeOperar() || accionEnCurso()"
                       title="Mantener cuarentena (Confirmar desvío)"
                     >
                       <mat-icon>block</mat-icon>
@@ -204,14 +204,14 @@
 
         <div class="tab-body">
           <app-empty-state
-            *ngIf="historialCuarentenas.length === 0"
+            *ngIf="historialCuarentenas().length === 0"
             icon="history"
             title="Sin historial de cuarentenas"
             description="No se registran actuaciones de cuarentena en el histórico."
           ></app-empty-state>
 
-          <div *ngIf="historialCuarentenas.length > 0" class="table-responsive">
-            <table mat-table [dataSource]="historialCuarentenas" class="mat-elevation-z1">
+          <div *ngIf="historialCuarentenas().length > 0" class="table-responsive">
+            <table mat-table [dataSource]="historialCuarentenas()" class="mat-elevation-z1">
               <!-- Código Cuarentena -->
               <ng-container matColumnDef="codigoCuarentena">
                 <th mat-header-cell *matHeaderCellDef>Código de medida</th>

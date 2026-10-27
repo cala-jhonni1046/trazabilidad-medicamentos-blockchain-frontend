@@ -4,42 +4,42 @@
     subtitle="Seguimiento satelital y cadena de frío en tiempo real de despachos en tránsito"
     icon="satellite_alt"
   >
-    <div actions *ngIf="despachoSeleccionado">
-      <button mat-stroked-button (click)="recargarLecturas()" [disabled]="cargandoLecturas">
+    <div actions *ngIf="despachoSeleccionado()">
+      <button mat-stroked-button (click)="recargarLecturas()" [disabled]="cargandoLecturas()">
         <mat-icon>refresh</mat-icon>
         Refrescar telemetría
       </button>
     </div>
   </app-page-header>
 
-  <app-loading-overlay [loading]="cargandoDespachos" message="Consultando despachos en tránsito…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargandoDespachos()" message="Consultando despachos en tránsito…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarDespachosEnTransito()"
   ></app-error-alert>
 
-  <div *ngIf="!cargandoDespachos && !errorCarga">
+  <div *ngIf="!cargandoDespachos() && !errorCarga()">
     <!-- Si no hay despachos en tránsito -->
     <app-empty-state
-      *ngIf="despachos.length === 0"
+      *ngIf="despachos().length === 0"
       icon="local_shipping"
       title="No hay despachos en tránsito"
       description="Actualmente no existen despachos con estado EN_TRANSITO para monitorear."
     ></app-empty-state>
 
-    <div *ngIf="despachos.length > 0" class="monitoreo-layout">
+    <div *ngIf="despachos().length > 0" class="monitoreo-layout">
       <!-- Selector de Despacho -->
       <mat-card class="selector-card" appearance="outlined">
         <div class="selector-row">
           <mat-form-field appearance="outline" class="selector-field">
             <mat-label>Seleccionar despacho en tránsito</mat-label>
             <mat-select
-              [ngModel]="despachoSeleccionadoId"
+              [ngModel]="despachoSeleccionadoId()"
               (ngModelChange)="seleccionarDespacho($event)"
             >
-              <mat-option *ngFor="let d of despachos" [value]="d.id">
+              <mat-option *ngFor="let d of despachos()" [value]="d.id">
                 Remito: {{ d.numeroRemito }} — {{ d.medicamentoNombre || 'Medicamento' }} (Lote: {{ d.codigoLote || d.loteId }}) — Patente: {{ d.vehiculoPatente || 'S/D' }}
               </mat-option>
             </mat-select>
@@ -48,100 +48,102 @@
       </mat-card>
 
       <!-- Ficha de Estado Rápido del Vehículo -->
-      <mat-card *ngIf="despachoSeleccionado" class="ficha-vehiculo-card" appearance="outlined">
+      <mat-card *ngIf="despachoSeleccionado() as despachoSel" class="ficha-vehiculo-card" appearance="outlined">
         <div class="ficha-grid">
           <div class="ficha-item">
             <span class="label">Vehículo (patente):</span>
             <span class="valor">
-              <strong class="patente-box">{{ despachoSeleccionado.vehiculoPatente || 'Sin patente' }}</strong>
+              <strong class="patente-box">{{ despachoSel.vehiculoPatente || 'Sin patente' }}</strong>
             </span>
           </div>
 
           <div class="ficha-item">
             <span class="label">Última posición GPS:</span>
-            <span class="valor" *ngIf="ultimaPosicion">
-              {{ ultimaPosicion.latitud | number: '1.4-4' }}, {{ ultimaPosicion.longitud | number: '1.4-4' }}
-              <small *ngIf="ultimaPosicion.velocidad != null">({{ ultimaPosicion.velocidad }} km/h)</small>
+            <span class="valor" *ngIf="ultimaPosicion() as pos">
+              {{ pos.latitud | number: '1.4-4' }}, {{ pos.longitud | number: '1.4-4' }}
+              <small *ngIf="pos.velocidad != null">({{ pos.velocidad }} km/h)</small>
             </span>
-            <span class="valor muted" *ngIf="!ultimaPosicion">Sin señal GPS</span>
+            <span class="valor muted" *ngIf="!ultimaPosicion()">Sin señal GPS</span>
           </div>
 
           <div class="ficha-item">
             <span class="label">Temperatura actual:</span>
-            <span class="valor" *ngIf="ultimaTemperatura" [class.alert-text]="ultimaTemperatura.alertaExcursion">
-              <mat-icon [class.icon-alert]="ultimaTemperatura.alertaExcursion">
-                {{ ultimaTemperatura.alertaExcursion ? 'warning' : 'thermostat' }}
+            <span class="valor" *ngIf="ultimaTemperatura() as temp" [class.alert-text]="temp.alertaExcursion">
+              <mat-icon [class.icon-alert]="temp.alertaExcursion">
+                {{ temp.alertaExcursion ? 'warning' : 'thermostat' }}
               </mat-icon>
-              <strong>{{ ultimaTemperatura.temperatura }} °C</strong>
-              <span *ngIf="ultimaTemperatura.alertaExcursion" class="excursion-badge">¡Excursión!</span>
+              <strong>{{ temp.temperatura }} °C</strong>
+              <span *ngIf="temp.alertaExcursion" class="excursion-badge">¡Excursión!</span>
             </span>
-            <span class="valor muted" *ngIf="!ultimaTemperatura">Sin señal térmica</span>
+            <span class="valor muted" *ngIf="!ultimaTemperatura()">Sin señal térmica</span>
           </div>
 
           <div class="ficha-item">
             <span class="label">Sensor ID:</span>
-            <span class="valor">{{ ultimaTemperatura?.sensorId || '—' }}</span>
+            <span class="valor">{{ ultimaTemperatura()?.sensorId || '—' }}</span>
           </div>
         </div>
 
-        <div *ngIf="ultimaTemperatura?.alertaExcursion" class="alerta-inspector-box">
+        <div *ngIf="ultimaTemperatura()?.alertaExcursion" class="alerta-inspector-box">
           <mat-icon>report_problem</mat-icon>
           <div class="alerta-inspector-text">
             <strong>Excursión térmica detectada por el backend.</strong>
             <span>
-              La temperatura actual sobrepasa el rango permitido ({{ despachoSeleccionado.temperaturaMinimaPermitida }} a {{ despachoSeleccionado.temperaturaMaximaPermitida }} °C).
+              La temperatura actual sobrepasa el rango permitido ({{ despachoSel.temperaturaMinimaPermitida }} a {{ despachoSel.temperaturaMaximaPermitida }} °C).
               Se sugiere al inspector de ANMAT evaluar la apertura preventiva de una cuarentena.
             </span>
           </div>
         </div>
       </mat-card>
 
-      <app-loading-overlay [loading]="cargandoLecturas" message="Actualizando lecturas de telemetría…"></app-loading-overlay>
+      <app-loading-overlay [loading]="cargandoLecturas()" message="Actualizando lecturas de telemetría…"></app-loading-overlay>
 
       <app-error-alert
-        *ngIf="errorLecturas"
-        [message]="errorLecturas"
+        *ngIf="errorLecturas()"
+        [message]="errorLecturas()"
         (retry)="recargarLecturas()"
       ></app-error-alert>
 
       <!-- Panel de Mapa y Gráficos -->
-      <div *ngIf="despachoSeleccionado && !cargandoLecturas" class="telemetria-paneles">
-        <!-- Mapa GPS con Leaflet -->
-        <mat-card class="panel-card" appearance="outlined">
-          <mat-card-header>
-            <mat-card-title>Recorrido satelital del despacho</mat-card-title>
-            <mat-card-subtitle>Trazado de coordenadas transmitidas y posición más reciente</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <app-gps-map
-              [lecturas]="lecturasGps"
-              [patente]="despachoSeleccionado.vehiculoPatente"
-            ></app-gps-map>
-          </mat-card-content>
-        </mat-card>
+      <ng-container *ngIf="!cargandoLecturas()">
+        <div *ngIf="despachoSeleccionado() as despachoSel2" class="telemetria-paneles">
+          <!-- Mapa GPS con Leaflet -->
+          <mat-card class="panel-card" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>Recorrido satelital del despacho</mat-card-title>
+              <mat-card-subtitle>Trazado de coordenadas transmitidas y posición más reciente</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-gps-map
+                [lecturas]="lecturasGps()"
+                [patente]="despachoSel2.vehiculoPatente"
+              ></app-gps-map>
+            </mat-card-content>
+          </mat-card>
 
-        <!-- Gráfico y Tabla Térmica -->
-        <mat-card class="panel-card" appearance="outlined">
-          <mat-card-header>
-            <mat-card-title>Control de cadena de frío</mat-card-title>
-            <mat-card-subtitle>Historial térmico comparado contra los límites admitidos del lote</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <app-temperatura-chart
-              [lecturas]="lecturasTemp"
-              [tempMin]="despachoSeleccionado.temperaturaMinimaPermitida"
-              [tempMax]="despachoSeleccionado.temperaturaMaximaPermitida"
-            ></app-temperatura-chart>
-          </mat-card-content>
-        </mat-card>
+          <!-- Gráfico y Tabla Térmica -->
+          <mat-card class="panel-card" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>Control de cadena de frío</mat-card-title>
+              <mat-card-subtitle>Historial térmico comparado contra los límites admitidos del lote</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-temperatura-chart
+                [lecturas]="lecturasTemp()"
+                [tempMin]="despachoSel2.temperaturaMinimaPermitida"
+                [tempMax]="despachoSel2.temperaturaMaximaPermitida"
+              ></app-temperatura-chart>
+            </mat-card-content>
+          </mat-card>
 
-        <!-- Simulador de Sensor (Solo ANMAT y SUPERADMIN) -->
-        <app-simulador-sensor
-          *ngIf="esAnmatOSuperadmin"
-          [despachoId]="despachoSeleccionado.id"
-          (lecturaEnviada)="recargarLecturas()"
-        ></app-simulador-sensor>
-      </div>
+          <!-- Simulador de Sensor (Solo ANMAT y SUPERADMIN) -->
+          <app-simulador-sensor
+            *ngIf="esAnmatOSuperadmin()"
+            [despachoId]="despachoSel2.id"
+            (lecturaEnviada)="recargarLecturas()"
+          ></app-simulador-sensor>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

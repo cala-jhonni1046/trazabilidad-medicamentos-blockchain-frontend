@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -44,15 +44,18 @@ export class DespachoNuevoComponent implements OnInit {
   readonly session = inject(SessionService);
 
   form!: FormGroup;
-  lotes: LoteSimple[] = [];
-  enlaces: EnlaceCuitSimple[] = [];
-  enlaceSeleccionado?: EnlaceCuitSimple;
 
-  cargandoDatos = false;
-  guardando = false;
-  errorCarga: string | null = null;
-  errorEnvio: string | null = null;
-  fieldErrors: Record<string, string> = {};
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly lotes = signal<LoteSimple[]>([]);
+  readonly enlaces = signal<EnlaceCuitSimple[]>([]);
+  readonly enlaceSeleccionado = signal<EnlaceCuitSimple | null>(null);
+
+  readonly cargandoDatos = signal(false);
+  readonly guardando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly errorEnvio = signal<string | null>(null);
+  readonly fieldErrors = signal<Record<string, string>>({});
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -71,8 +74,8 @@ export class DespachoNuevoComponent implements OnInit {
   }
 
   cargarDatosIniciales(): void {
-    this.cargandoDatos = true;
-    this.errorCarga = null;
+    this.cargandoDatos.set(true);
+    this.errorCarga.set(null);
 
     forkJoin({
       lotes: this.api.getLotes(),
@@ -82,22 +85,22 @@ export class DespachoNuevoComponent implements OnInit {
         const orgId = this.session.organizacion()?.id;
 
         // Filtrar lotes del laboratorio del usuario
-        this.lotes = lotes.filter((l) => !orgId || l.laboratorioId === orgId);
+        this.lotes.set(lotes.filter((l) => !orgId || l.laboratorioId === orgId));
 
         // Filtrar enlaces ACTIVO cuyo laboratorio sea el del usuario
-        this.enlaces = enlaces.filter((e) => !orgId || e.laboratorioId === orgId);
+        this.enlaces.set(enlaces.filter((e) => !orgId || e.laboratorioId === orgId));
 
-        this.cargandoDatos = false;
+        this.cargandoDatos.set(false);
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargandoDatos = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargandoDatos.set(false);
       },
     });
   }
 
   onLoteChange(loteId: number): void {
-    const lote = this.lotes.find((l) => l.id === loteId);
+    const lote = this.lotes().find((l) => l.id === loteId);
     if (lote) {
       this.form.patchValue({
         temperaturaMinimaPermitida: lote.tempMin ?? null,
@@ -107,25 +110,26 @@ export class DespachoNuevoComponent implements OnInit {
   }
 
   onEnlaceChange(enlaceId: number): void {
-    this.enlaceSeleccionado = this.enlaces.find((e) => e.id === enlaceId);
+    this.enlaceSeleccionado.set(this.enlaces().find((e) => e.id === enlaceId) ?? null);
   }
 
   guardar(): void {
-    if (this.form.invalid || !this.enlaceSeleccionado) {
+    const enlaceSeleccionado = this.enlaceSeleccionado();
+    if (this.form.invalid || !enlaceSeleccionado) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.guardando = true;
-    this.errorEnvio = null;
-    this.fieldErrors = {};
+    this.guardando.set(true);
+    this.errorEnvio.set(null);
+    this.fieldErrors.set({});
 
     const formVal = this.form.value;
     const request: DespachoLogisticoRequest = {
       loteId: Number(formVal.loteId),
       enlaceCuitId: Number(formVal.enlaceCuitId),
-      distribuidorId: this.enlaceSeleccionado.distribuidorId,
-      farmaciaDestinoId: this.enlaceSeleccionado.farmaciaId || null,
+      distribuidorId: enlaceSeleccionado.distribuidorId,
+      farmaciaDestinoId: enlaceSeleccionado.farmaciaId || null,
       numeroRemito: String(formVal.numeroRemito).trim(),
       vehiculoPatente: formVal.vehiculoPatente ? String(formVal.vehiculoPatente).trim().toUpperCase() : null,
       fechaSalida: formVal.fechaSalida || null,
@@ -137,13 +141,13 @@ export class DespachoNuevoComponent implements OnInit {
 
     this.api.crearDespacho(request).subscribe({
       next: (despacho) => {
-        this.guardando = false;
+        this.guardando.set(false);
         void this.router.navigate(['/despachos', despacho.id]);
       },
       error: (err) => {
-        this.guardando = false;
-        this.errorEnvio = mensajeApi(err);
-        this.fieldErrors = extraerFieldErrors(err);
+        this.guardando.set(false);
+        this.errorEnvio.set(mensajeApi(err));
+        this.fieldErrors.set(extraerFieldErrors(err));
       },
     });
   }

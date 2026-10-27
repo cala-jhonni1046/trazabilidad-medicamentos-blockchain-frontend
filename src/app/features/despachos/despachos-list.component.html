@@ -17,7 +17,7 @@
     <div class="filtros-grid">
       <mat-form-field appearance="outline" class="filtro-item">
         <mat-label>Filtrar por estado</mat-label>
-        <mat-select [(ngModel)]="filtroEstado">
+        <mat-select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
           <mat-option value="TODOS">Todos los estados</mat-option>
           <mat-option value="PREPARADO">Preparado</mat-option>
           <mat-option value="EN_TRANSITO">En tránsito</mat-option>
@@ -28,42 +28,47 @@
 
       <mat-form-field appearance="outline" class="filtro-item busqueda">
         <mat-label>Buscar por remito, lote, medicamento o distribuidor</mat-label>
-        <input matInput [(ngModel)]="filtroBusqueda" placeholder="Ej: REM-001 o LOTE-X" />
+        <input
+          matInput
+          [ngModel]="filtroBusqueda()"
+          (ngModelChange)="filtroBusqueda.set($event)"
+          placeholder="Ej: REM-001 o LOTE-X"
+        />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
   </mat-card>
 
   <app-error-alert
-    *ngIf="errorAccion"
-    [message]="errorAccion"
+    *ngIf="errorAccion()"
+    [message]="errorAccion()"
     [showRetry]="false"
   ></app-error-alert>
 
-  <app-loading-overlay [loading]="cargando" message="Cargando despachos logísticos…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargando()" message="Cargando despachos logísticos…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarDespachos()"
   ></app-error-alert>
 
-  <div *ngIf="!cargando && !errorCarga">
+  <div *ngIf="!cargando() && !errorCarga()">
     <app-empty-state
-      *ngIf="despachosFiltrados.length === 0"
+      *ngIf="despachosFiltrados().length === 0"
       icon="local_shipping"
       title="No se encontraron despachos"
-      [description]="despachos.length === 0 ? 'Todavía no hay despachos registrados.' : 'No hay despachos que coincidan con los filtros aplicados.'"
+      [description]="despachos().length === 0 ? 'Todavía no hay despachos registrados.' : 'No hay despachos que coincidan con los filtros aplicados.'"
     >
-      <div *ngIf="session.rol() === 'LABORATORIO' && despachos.length === 0" style="margin-top: 16px;">
+      <div *ngIf="session.rol() === 'LABORATORIO' && despachos().length === 0" style="margin-top: 16px;">
         <a mat-flat-button color="primary" routerLink="/despachos/nuevo">
           <mat-icon>add</mat-icon> Crear despacho
         </a>
       </div>
     </app-empty-state>
 
-    <div *ngIf="despachosFiltrados.length > 0" class="table-responsive">
-      <table mat-table [dataSource]="despachosFiltrados" class="mat-elevation-z1">
+    <div *ngIf="despachosFiltrados().length > 0" class="table-responsive">
+      <table mat-table [dataSource]="despachosFiltrados()" class="mat-elevation-z1">
         <!-- Número de Remito -->
         <ng-container matColumnDef="numeroRemito">
           <th mat-header-cell *matHeaderCellDef>Remito</th>
@@ -140,7 +145,7 @@
               mat-icon-button
               color="primary"
               (click)="iniciar(d)"
-              [disabled]="accionEnCursoId === d.id"
+              [disabled]="accionEnCursoId() === d.id"
               title="Iniciar despacho (pasar a EN_TRANSITO)"
               aria-label="Iniciar despacho"
             >
@@ -153,7 +158,7 @@
               mat-icon-button
               color="warn"
               (click)="cancelar(d)"
-              [disabled]="accionEnCursoId === d.id"
+              [disabled]="accionEnCursoId() === d.id"
               title="Cancelar despacho"
               aria-label="Cancelar despacho"
             >

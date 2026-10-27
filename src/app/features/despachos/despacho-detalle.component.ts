@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -44,14 +44,28 @@ export class DespachoDetalleComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
 
+  // El ID viene de la ruta una sola vez en ngOnInit: no es estado asíncrono repetido.
   despachoId!: number;
-  despacho?: DespachoLogistico;
-  eventos: EventoCustodia[] = [];
 
-  cargando = false;
-  errorCarga: string | null = null;
-  accionEnCurso = false;
-  errorAccion: string | null = null;
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly despacho = signal<DespachoLogistico | null>(null);
+  readonly eventos = signal<EventoCustodia[]>([]);
+
+  readonly cargando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly accionEnCurso = signal(false);
+  readonly errorAccion = signal<string | null>(null);
+
+  readonly puedeVerTextosInternos = computed(() => {
+    const rol = this.session.rol();
+    if (rol === 'ANMAT' || rol === 'SUPERADMIN') return true;
+    const despacho = this.despacho();
+    if (rol === 'LABORATORIO' && despacho?.laboratorioId) {
+      return this.session.organizacion()?.id === despacho.laboratorioId;
+    }
+    return false;
+  });
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -59,48 +73,38 @@ export class DespachoDetalleComponent implements OnInit {
     if (this.despachoId) {
       this.cargarDetalle();
     } else {
-      this.errorCarga = 'ID de despacho inválido.';
+      this.errorCarga.set('ID de despacho inválido.');
     }
   }
 
   cargarDetalle(): void {
-    this.cargando = true;
-    this.errorCarga = null;
+    this.cargando.set(true);
+    this.errorCarga.set(null);
 
     forkJoin({
       despacho: this.api.getDespachoPorId(this.despachoId),
       eventos: this.api.getEventos(this.despachoId),
     }).subscribe({
       next: ({ despacho, eventos }) => {
-        this.despacho = despacho;
-        this.eventos = eventos.sort((a, b) =>
-          a.fechaHoraEvento.localeCompare(b.fechaHoraEvento),
-        );
-        this.cargando = false;
+        this.despacho.set(despacho);
+        this.eventos.set([...eventos].sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento)));
+        this.cargando.set(false);
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargando = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargando.set(false);
       },
     });
   }
 
-  get puedeVerTextosInternos(): boolean {
-    const rol = this.session.rol();
-    if (rol === 'ANMAT' || rol === 'SUPERADMIN') return true;
-    if (rol === 'LABORATORIO' && this.despacho?.laboratorioId) {
-      return this.session.organizacion()?.id === this.despacho.laboratorioId;
-    }
-    return false;
-  }
-
   iniciar(): void {
-    if (!this.despacho) return;
+    const despachoActual = this.despacho();
+    if (!despachoActual) return;
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Iniciar traslado',
-        message: `¿Deseas iniciar el traslado para el remito ${this.despacho.numeroRemito}?`,
+        message: `¿Deseas iniciar el traslado para el remito ${despachoActual.numeroRemito}?`,
         confirmText: 'Iniciar traslado',
         cancelText: 'Cancelar',
         isDanger: false,
@@ -110,33 +114,34 @@ export class DespachoDetalleComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmado) => {
       if (!confirmado) return;
 
-      this.accionEnCurso = true;
-      this.errorAccion = null;
+      this.accionEnCurso.set(true);
+      this.errorAccion.set(null);
 
       this.api.iniciarDespacho(this.despachoId, { observaciones: 'Iniciado desde el detalle' }).subscribe({
         next: (actualizado) => {
-          this.despacho = actualizado;
-          this.accionEnCurso = false;
+          this.despacho.set(actualizado);
+          this.accionEnCurso.set(false);
           // Recargar eventos para ver el evento generado
           this.api.getEventos(this.despachoId).subscribe((evts) => {
-            this.eventos = evts.sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento));
+            this.eventos.set([...evts].sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento)));
           });
         },
         error: (err) => {
-          this.errorAccion = mensajeApi(err);
-          this.accionEnCurso = false;
+          this.errorAccion.set(mensajeApi(err));
+          this.accionEnCurso.set(false);
         },
       });
     });
   }
 
   cancelar(): void {
-    if (!this.despacho) return;
+    const despachoActual = this.despacho();
+    if (!despachoActual) return;
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Cancelar despacho',
-        message: `¿Estás seguro de cancelar este despacho (${this.despacho.numeroRemito})?`,
+        message: `¿Estás seguro de cancelar este despacho (${despachoActual.numeroRemito})?`,
         confirmText: 'Sí, cancelar',
         cancelText: 'Volver',
         isDanger: true,
@@ -146,20 +151,20 @@ export class DespachoDetalleComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmado) => {
       if (!confirmado) return;
 
-      this.accionEnCurso = true;
-      this.errorAccion = null;
+      this.accionEnCurso.set(true);
+      this.errorAccion.set(null);
 
       this.api.cancelarDespacho(this.despachoId, { observaciones: 'Cancelado desde el detalle' }).subscribe({
         next: (actualizado) => {
-          this.despacho = actualizado;
-          this.accionEnCurso = false;
+          this.despacho.set(actualizado);
+          this.accionEnCurso.set(false);
           this.api.getEventos(this.despachoId).subscribe((evts) => {
-            this.eventos = evts.sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento));
+            this.eventos.set([...evts].sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento)));
           });
         },
         error: (err) => {
-          this.errorAccion = mensajeApi(err);
-          this.accionEnCurso = false;
+          this.errorAccion.set(mensajeApi(err));
+          this.accionEnCurso.set(false);
         },
       });
     });

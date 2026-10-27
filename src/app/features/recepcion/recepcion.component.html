@@ -5,22 +5,22 @@
     icon="local_pharmacy"
   >
     <div actions>
-      <button mat-stroked-button (click)="cargarDatos()" [disabled]="cargando">
+      <button mat-stroked-button (click)="cargarDatos()" [disabled]="cargando()">
         <mat-icon>refresh</mat-icon>
         Actualizar
       </button>
     </div>
   </app-page-header>
 
-  <app-loading-overlay [loading]="cargando" message="Consultando despachos en tránsito hacia tu farmacia…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargando()" message="Consultando despachos en tránsito hacia tu farmacia…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarDatos()"
   ></app-error-alert>
 
-  <div *ngIf="!cargando && !errorCarga">
+  <div *ngIf="!cargando() && !errorCarga()">
     <mat-tab-group animationDuration="200ms">
       <!-- Pestaña 1: Auditoría y Recepción -->
       <mat-tab>
@@ -31,13 +31,13 @@
 
         <div class="tab-body">
           <app-empty-state
-            *ngIf="despachos.length === 0"
+            *ngIf="despachos().length === 0"
             icon="local_shipping"
             title="Sin cargas pendientes"
             description="No hay despachos en estado EN_TRANSITO dirigidos a tu farmacia actualmente."
           ></app-empty-state>
 
-          <div *ngIf="despachos.length > 0" class="recepcion-layout">
+          <div *ngIf="despachos().length > 0" class="recepcion-layout">
             <!-- Selector de Despacho / Buscador -->
             <mat-card class="selector-card" appearance="outlined">
               <mat-card-header>
@@ -48,10 +48,10 @@
                   <mat-form-field appearance="outline" class="select-field">
                     <mat-label>Despacho a auditar</mat-label>
                     <mat-select
-                      [ngModel]="despachoSeleccionado?.id"
+                      [ngModel]="despachoSeleccionado()?.id"
                       (ngModelChange)="seleccionarDespacho($event)"
                     >
-                      <mat-option *ngFor="let d of despachosFiltrados" [value]="d.id">
+                      <mat-option *ngFor="let d of despachosFiltrados()" [value]="d.id">
                         Remito: {{ d.numeroRemito }} — Lote: {{ d.codigoLote || d.loteId }} ({{ d.medicamentoNombre || 'Medicamento' }})
                       </mat-option>
                     </mat-select>
@@ -59,7 +59,12 @@
 
                   <mat-form-field appearance="outline" class="search-field">
                     <mat-label>Filtrar por remito o lote</mat-label>
-                    <input matInput [(ngModel)]="filtroBusqueda" placeholder="Buscar…" />
+                    <input
+                      matInput
+                      [ngModel]="filtroBusqueda()"
+                      (ngModelChange)="filtroBusqueda.set($event)"
+                      placeholder="Buscar…"
+                    />
                     <mat-icon matSuffix>search</mat-icon>
                   </mat-form-field>
                 </div>
@@ -67,58 +72,58 @@
             </mat-card>
 
             <!-- Ficha de Auditoría de Carga -->
-            <app-loading-overlay [loading]="cargandoFicha" message="Cargando historial térmico y custodia…"></app-loading-overlay>
+            <app-loading-overlay [loading]="cargandoFicha()" message="Cargando historial térmico y custodia…"></app-loading-overlay>
 
             <app-error-alert
-              *ngIf="errorFicha"
-              [message]="errorFicha"
-              (retry)="seleccionarDespacho(despachoSeleccionado!.id)"
+              *ngIf="errorFicha()"
+              [message]="errorFicha()"
+              (retry)="seleccionarDespacho(despachoSeleccionado()!.id)"
             ></app-error-alert>
 
-            <div *ngIf="despachoSeleccionado && !cargandoFicha" class="auditoria-grid">
+            <div *ngIf="!cargandoFicha() && despachoSeleccionado() as despachoSel" class="auditoria-grid">
               <mat-card class="ficha-card" appearance="outlined">
                 <mat-card-header>
                   <mat-card-title>Ficha técnica de auditoría del lote</mat-card-title>
-                  <mat-card-subtitle>Remito {{ despachoSeleccionado.numeroRemito }}</mat-card-subtitle>
+                  <mat-card-subtitle>Remito {{ despachoSel.numeroRemito }}</mat-card-subtitle>
                 </mat-card-header>
 
                 <mat-card-content>
                   <div class="datos-grid">
                     <div class="dato-item">
                       <span class="label">Lote:</span>
-                      <span class="val"><strong>{{ despachoSeleccionado.codigoLote || 'Lote #' + despachoSeleccionado.loteId }}</strong></span>
+                      <span class="val"><strong>{{ despachoSel.codigoLote || 'Lote #' + despachoSel.loteId }}</strong></span>
                     </div>
                     <div class="dato-item">
                       <span class="label">Medicamento:</span>
-                      <span class="val">{{ despachoSeleccionado.medicamentoNombre || '—' }}</span>
+                      <span class="val">{{ despachoSel.medicamentoNombre || '—' }}</span>
                     </div>
                     <div class="dato-item">
                       <span class="label">Distribuidor transportista:</span>
-                      <span class="val">{{ despachoSeleccionado.distribuidorNombre || '—' }}</span>
+                      <span class="val">{{ despachoSel.distribuidorNombre || '—' }}</span>
                     </div>
                     <div class="dato-item">
                       <span class="label">Vehículo (patente):</span>
-                      <span class="val patente">{{ despachoSeleccionado.vehiculoPatente || 'Sin patente' }}</span>
+                      <span class="val patente">{{ despachoSel.vehiculoPatente || 'Sin patente' }}</span>
                     </div>
                     <div class="dato-item">
                       <span class="label">Rango térmico exigido:</span>
                       <span class="val frio">
-                        {{ despachoSeleccionado.temperaturaMinimaPermitida != null ? despachoSeleccionado.temperaturaMinimaPermitida + '°C' : '—' }} a
-                        {{ despachoSeleccionado.temperaturaMaximaPermitida != null ? despachoSeleccionado.temperaturaMaximaPermitida + '°C' : '—' }}
+                        {{ despachoSel.temperaturaMinimaPermitida != null ? despachoSel.temperaturaMinimaPermitida + '°C' : '—' }} a
+                        {{ despachoSel.temperaturaMaximaPermitida != null ? despachoSel.temperaturaMaximaPermitida + '°C' : '—' }}
                       </span>
                     </div>
                     <div class="dato-item">
                       <span class="label">Última temperatura leída:</span>
-                      <span class="val" [class.alert]="ultimaTemperatura?.alertaExcursion">
-                        <strong *ngIf="ultimaTemperatura">{{ ultimaTemperatura.temperatura }} °C</strong>
-                        <span *ngIf="!ultimaTemperatura" class="text-muted">Sin lecturas</span>
-                        <span *ngIf="ultimaTemperatura?.alertaExcursion" class="alerta-pill">¡Excursión!</span>
+                      <span class="val" [class.alert]="ultimaTemperatura()?.alertaExcursion">
+                        <strong *ngIf="ultimaTemperatura() as temp">{{ temp.temperatura }} °C</strong>
+                        <span *ngIf="!ultimaTemperatura()" class="text-muted">Sin lecturas</span>
+                        <span *ngIf="ultimaTemperatura()?.alertaExcursion" class="alerta-pill">¡Excursión!</span>
                       </span>
                     </div>
                   </div>
 
                   <!-- Advertencia si hubo excursión -->
-                  <div *ngIf="huboExcursionTermica" class="banner-excursion">
+                  <div *ngIf="huboExcursionTermica()" class="banner-excursion">
                     <mat-icon>warning</mat-icon>
                     <div class="banner-text">
                       <strong>Cadena de frío comprometida durante el traslado</strong>
@@ -128,15 +133,15 @@
 
                   <!-- Eventos de custodia registrados -->
                   <div class="eventos-resumen">
-                    <h4>Eventos de custodia en tránsito ({{ eventosCustodia.length }})</h4>
-                    <ul *ngIf="eventosCustodia.length > 0" class="eventos-list">
-                      <li *ngFor="let ev of eventosCustodia">
+                    <h4>Eventos de custodia en tránsito ({{ eventosCustodia().length }})</h4>
+                    <ul *ngIf="eventosCustodia().length > 0" class="eventos-list">
+                      <li *ngFor="let ev of eventosCustodia()">
                         <span class="ev-tipo">{{ ev.tipo }}</span>
                         <span class="ev-fecha">{{ ev.fechaHoraEvento | fechaAr: 'completo' }}</span>
                         <small *ngIf="ev.hashEvento" class="ev-hash">Hash: {{ ev.hashEvento | slice: 0: 16 }}…</small>
                       </li>
                     </ul>
-                    <p *ngIf="eventosCustodia.length === 0" class="text-muted">No se registran eventos de custodia previos.</p>
+                    <p *ngIf="eventosCustodia().length === 0" class="text-muted">No se registran eventos de custodia previos.</p>
                   </div>
                 </mat-card-content>
               </mat-card>
@@ -150,22 +155,22 @@
 
                 <mat-card-content>
                   <!-- Mensaje de confirmación tras registrar con éxito -->
-                  <div *ngIf="recepcionExitosa" class="confirmacion-exitosa">
+                  <div *ngIf="recepcionExitosa() as recExitosa" class="confirmacion-exitosa">
                     <mat-icon>check_circle</mat-icon>
                     <div class="conf-text">
                       <strong>¡Carga recepcionada exitosamente!</strong>
                       <p>
-                        Comprobante: <strong>{{ recepcionExitosa.numeroComprobante }}</strong> ·
-                        Conformidad: <strong>{{ recepcionExitosa.estadoConformidad }}</strong> ·
+                        Comprobante: <strong>{{ recExitosa.numeroComprobante }}</strong> ·
+                        Conformidad: <strong>{{ recExitosa.estadoConformidad }}</strong> ·
                         El despacho pasó a estado <strong>RECIBIDO</strong>.
                       </p>
                     </div>
                   </div>
 
                   <app-error-alert
-                    *ngIf="errorEnvio"
-                    [message]="errorEnvio"
-                    [fieldErrors]="fieldErrors"
+                    *ngIf="errorEnvio()"
+                    [message]="errorEnvio()"
+                    [fieldErrors]="fieldErrors()"
                     [showRetry]="false"
                   ></app-error-alert>
 
@@ -175,7 +180,7 @@
                         <mat-label>Número de comprobante interno de recepción</mat-label>
                         <input matInput formControlName="numeroComprobante" placeholder="Ej: REC-2026-FARM-001" required />
                         <mat-error *ngIf="form.get('numeroComprobante')?.hasError('required')">El comprobante es obligatorio</mat-error>
-                        <mat-error *ngIf="fieldErrors['numeroComprobante']">{{ fieldErrors['numeroComprobante'] }}</mat-error>
+                        <mat-error *ngIf="fieldErrors()['numeroComprobante']">{{ fieldErrors()['numeroComprobante'] }}</mat-error>
                       </mat-form-field>
                     </div>
 
@@ -224,11 +229,11 @@
                         mat-flat-button
                         color="primary"
                         type="submit"
-                        [disabled]="enviando || form.invalid"
+                        [disabled]="enviando() || form.invalid"
                       >
-                        <mat-icon *ngIf="enviando">hourglass_empty</mat-icon>
-                        <mat-icon *ngIf="!enviando">check</mat-icon>
-                        {{ enviando ? 'Registrando recepción…' : 'Confirmar recepción en farmacia' }}
+                        <mat-icon *ngIf="enviando()">hourglass_empty</mat-icon>
+                        <mat-icon *ngIf="!enviando()">check</mat-icon>
+                        {{ enviando() ? 'Registrando recepción…' : 'Confirmar recepción en farmacia' }}
                       </button>
                     </div>
                   </form>
@@ -248,14 +253,14 @@
 
         <div class="tab-body">
           <app-empty-state
-            *ngIf="recepcionesHistorial.length === 0"
+            *ngIf="recepcionesHistorial().length === 0"
             icon="history"
             title="Sin recepciones registradas"
             description="Tu farmacia aún no ha recepcionado despachos."
           ></app-empty-state>
 
-          <div *ngIf="recepcionesHistorial.length > 0" class="table-responsive">
-            <table mat-table [dataSource]="recepcionesHistorial" class="mat-elevation-z1">
+          <div *ngIf="recepcionesHistorial().length > 0" class="table-responsive">
+            <table mat-table [dataSource]="recepcionesHistorial()" class="mat-elevation-z1">
               <ng-container matColumnDef="numeroComprobante">
                 <th mat-header-cell *matHeaderCellDef>Comprobante</th>
                 <td mat-cell *matCellDef="let r"><strong>{{ r.numeroComprobante }}</strong></td>

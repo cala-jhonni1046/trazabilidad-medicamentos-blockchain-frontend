@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { DespachosApiService } from './despachos-api.service';
-import { DespachoLogistico, EstadoDespacho } from './despachos.models';
+import { DespachoLogistico } from './despachos.models';
 import { SessionService } from '../../core/session/session.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
@@ -52,14 +52,16 @@ export class DespachosListComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
 
-  despachos: DespachoLogistico[] = [];
-  cargando = false;
-  errorCarga: string | null = null;
-  accionEnCursoId: number | null = null;
-  errorAccion: string | null = null;
+  // App zoneless: todo lo que se modifica en subscribe/next/error y se lee en la
+  // plantilla debe ser signal; un campo común no repinta la vista.
+  readonly despachos = signal<DespachoLogistico[]>([]);
+  readonly cargando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly accionEnCursoId = signal<number | null>(null);
+  readonly errorAccion = signal<string | null>(null);
 
-  filtroEstado: string = 'TODOS';
-  filtroBusqueda: string = '';
+  readonly filtroEstado = signal<string>('TODOS');
+  readonly filtroBusqueda = signal<string>('');
 
   readonly displayedColumns: string[] = [
     'numeroRemito',
@@ -72,40 +74,13 @@ export class DespachosListComponent implements OnInit {
     'acciones',
   ];
 
-  ngOnInit(): void {
-    this.cargarDespachos();
-  }
+  readonly despachosFiltrados = computed(() => {
+    const estado = this.filtroEstado();
+    const termino = this.filtroBusqueda().trim().toLowerCase();
 
-  cargarDespachos(): void {
-    this.cargando = true;
-    this.errorCarga = null;
+    return this.despachos().filter((d) => {
+      const cumpleEstado = estado === 'TODOS' || d.estado === estado;
 
-    this.api.getDespachos().subscribe({
-      next: (data) => {
-        const orgId = this.session.organizacion()?.id;
-        const rol = this.session.rol();
-
-        // Si es LABORATORIO, filtrar por su laboratorio
-        if (rol === 'LABORATORIO' && orgId) {
-          this.despachos = data.filter((d) => d.laboratorioId === orgId);
-        } else {
-          this.despachos = data;
-        }
-        this.cargando = false;
-      },
-      error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargando = false;
-      },
-    });
-  }
-
-  get despachosFiltrados(): DespachoLogistico[] {
-    return this.despachos.filter((d) => {
-      const cumpleEstado =
-        this.filtroEstado === 'TODOS' || d.estado === this.filtroEstado;
-
-      const termino = this.filtroBusqueda.trim().toLowerCase();
       const cumpleBusqueda =
         !termino ||
         (d.numeroRemito && d.numeroRemito.toLowerCase().includes(termino)) ||
@@ -115,6 +90,31 @@ export class DespachosListComponent implements OnInit {
         (d.vehiculoPatente && d.vehiculoPatente.toLowerCase().includes(termino));
 
       return cumpleEstado && cumpleBusqueda;
+    });
+  });
+
+  ngOnInit(): void {
+    this.cargarDespachos();
+  }
+
+  cargarDespachos(): void {
+    this.cargando.set(true);
+    this.errorCarga.set(null);
+
+    this.api.getDespachos().subscribe({
+      next: (data) => {
+        const orgId = this.session.organizacion()?.id;
+        const rol = this.session.rol();
+
+        // Si es LABORATORIO, filtrar por su laboratorio
+        const despachos = rol === 'LABORATORIO' && orgId ? data.filter((d) => d.laboratorioId === orgId) : data;
+        this.despachos.set(despachos);
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        this.errorCarga.set(mensajeApi(err));
+        this.cargando.set(false);
+      },
     });
   }
 
@@ -132,17 +132,17 @@ export class DespachosListComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmado) => {
       if (!confirmado) return;
 
-      this.accionEnCursoId = despacho.id;
-      this.errorAccion = null;
+      this.accionEnCursoId.set(despacho.id);
+      this.errorAccion.set(null);
 
       this.api.iniciarDespacho(despacho.id, { observaciones: 'Despacho iniciado desde el panel' }).subscribe({
         next: (actualizado) => {
-          despacho.estado = actualizado.estado;
-          this.accionEnCursoId = null;
+          this.reemplazarDespacho(despacho.id, actualizado.estado);
+          this.accionEnCursoId.set(null);
         },
         error: (err) => {
-          this.errorAccion = mensajeApi(err);
-          this.accionEnCursoId = null;
+          this.errorAccion.set(mensajeApi(err));
+          this.accionEnCursoId.set(null);
         },
       });
     });
@@ -162,19 +162,24 @@ export class DespachosListComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmado) => {
       if (!confirmado) return;
 
-      this.accionEnCursoId = despacho.id;
-      this.errorAccion = null;
+      this.accionEnCursoId.set(despacho.id);
+      this.errorAccion.set(null);
 
       this.api.cancelarDespacho(despacho.id, { observaciones: 'Cancelado por el usuario' }).subscribe({
         next: (actualizado) => {
-          despacho.estado = actualizado.estado;
-          this.accionEnCursoId = null;
+          this.reemplazarDespacho(despacho.id, actualizado.estado);
+          this.accionEnCursoId.set(null);
         },
         error: (err) => {
-          this.errorAccion = mensajeApi(err);
-          this.accionEnCursoId = null;
+          this.errorAccion.set(mensajeApi(err));
+          this.accionEnCursoId.set(null);
         },
       });
     });
+  }
+
+  /** Reemplaza el despacho por uno nuevo con el estado actualizado (no se muta el objeto en el array). */
+  private reemplazarDespacho(id: number, estado: DespachoLogistico['estado']): void {
+    this.despachos.update((lista) => lista.map((d) => (d.id === id ? { ...d, estado } : d)));
   }
 }

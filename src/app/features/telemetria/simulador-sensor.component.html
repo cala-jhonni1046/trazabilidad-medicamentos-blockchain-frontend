@@ -14,17 +14,17 @@
 
   <mat-card-content>
     <app-error-alert
-      *ngIf="errorEnvio"
-      [message]="errorEnvio"
-      [fieldErrors]="fieldErrors"
+      *ngIf="errorEnvio()"
+      [message]="errorEnvio()"
+      [fieldErrors]="fieldErrors()"
       [showRetry]="false"
     ></app-error-alert>
 
-    <div *ngIf="resultadoAlerta !== null" class="resultado-box" [class.alerta]="resultadoAlerta" [class.ok]="!resultadoAlerta">
-      <mat-icon>{{ resultadoAlerta ? 'warning' : 'check_circle' }}</mat-icon>
+    <div *ngIf="resultadoAlerta() !== null" class="resultado-box" [class.alerta]="resultadoAlerta()" [class.ok]="!resultadoAlerta()">
+      <mat-icon>{{ resultadoAlerta() ? 'warning' : 'check_circle' }}</mat-icon>
       <div class="res-texto">
-        <strong>{{ resultadoAlerta ? '¡Alerta de excursión térmica devuelta por el backend!' : 'Lectura registrada correctamente dentro del rango térmico.' }}</strong>
-        <p *ngIf="resultadoAlerta">
+        <strong>{{ resultadoAlerta() ? '¡Alerta de excursión térmica devuelta por el backend!' : 'Lectura registrada correctamente dentro del rango térmico.' }}</strong>
+        <p *ngIf="resultadoAlerta()">
           El backend detectó que la temperatura sobrepasó los límites permitidos. El inspector puede evaluar la apertura de cuarentena.
         </p>
       </div>
@@ -78,10 +78,10 @@
       </div>
 
       <div class="form-actions">
-        <button mat-flat-button color="accent" type="submit" [disabled]="enviando || form.invalid">
-          <mat-icon *ngIf="enviando">hourglass_empty</mat-icon>
-          <mat-icon *ngIf="!enviando">sensors</mat-icon>
-          {{ enviando ? 'Transmitiendo lectura…' : 'Emitir lectura simultánea (GPS + Temperatura)' }}
+        <button mat-flat-button color="accent" type="submit" [disabled]="enviando() || form.invalid">
+          <mat-icon *ngIf="enviando()">hourglass_empty</mat-icon>
+          <mat-icon *ngIf="!enviando()">sensors</mat-icon>
+          {{ enviando() ? 'Transmitiendo lectura…' : 'Emitir lectura simultánea (GPS + Temperatura)' }}
         </button>
       </div>
     </form>
