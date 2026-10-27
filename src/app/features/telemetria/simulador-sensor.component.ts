@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -35,10 +35,12 @@ export class SimuladorSensorComponent implements OnInit {
   @Output() lecturaEnviada = new EventEmitter<{ alertaExcursion?: boolean | null }>();
 
   form!: FormGroup;
-  enviando = false;
-  errorEnvio: string | null = null;
-  fieldErrors: Record<string, string> = {};
-  resultadoAlerta: boolean | null = null;
+  // App zoneless: estos campos se modifican dentro de subscribe/next/error y se leen
+  // en la plantilla; sin signal, el cambio no repinta la vista.
+  readonly enviando = signal(false);
+  readonly errorEnvio = signal<string | null>(null);
+  readonly fieldErrors = signal<Record<string, string>>({});
+  readonly resultadoAlerta = signal<boolean | null>(null);
 
   ngOnInit(): void {
     const ahora = new Date().toISOString().slice(0, 16);
@@ -59,10 +61,10 @@ export class SimuladorSensorComponent implements OnInit {
       return;
     }
 
-    this.enviando = true;
-    this.errorEnvio = null;
-    this.fieldErrors = {};
-    this.resultadoAlerta = null;
+    this.enviando.set(true);
+    this.errorEnvio.set(null);
+    this.fieldErrors.set({});
+    this.resultadoAlerta.set(null);
 
     const val = this.form.value;
     const fechaHora = val.fechaHora ? new Date(val.fechaHora).toISOString() : new Date().toISOString();
@@ -88,14 +90,14 @@ export class SimuladorSensorComponent implements OnInit {
       temp: this.api.registrarTemperatura(tempReq),
     }).subscribe({
       next: ({ temp }) => {
-        this.enviando = false;
-        this.resultadoAlerta = temp.alertaExcursion ?? false;
+        this.enviando.set(false);
+        this.resultadoAlerta.set(temp.alertaExcursion ?? false);
         this.lecturaEnviada.emit({ alertaExcursion: temp.alertaExcursion });
       },
       error: (err) => {
-        this.enviando = false;
-        this.errorEnvio = mensajeApi(err);
-        this.fieldErrors = extraerFieldErrors(err);
+        this.enviando.set(false);
+        this.errorEnvio.set(mensajeApi(err));
+        this.fieldErrors.set(extraerFieldErrors(err));
       },
     });
   }

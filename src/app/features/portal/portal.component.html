@@ -47,8 +47,8 @@
             />
             <mat-icon matPrefix>qr_code_2</mat-icon>
           </mat-form-field>
-          <button mat-flat-button color="primary" type="submit" [disabled]="consultando || !codigoQr.trim()">
-            @if (consultando) {
+          <button mat-flat-button color="primary" type="submit" [disabled]="consultando() || !codigoQr.trim()">
+            @if (consultando()) {
               Consultando…
             } @else {
               Verificar
@@ -56,12 +56,12 @@
           </button>
         </form>
 
-        <app-loading-overlay [loading]="consultando" message="Consultando…"></app-loading-overlay>
+        <app-loading-overlay [loading]="consultando()" message="Consultando…"></app-loading-overlay>
 
-        @if (errorConsulta) {
+        @if (errorConsulta()) {
           <p class="error-consulta" role="alert">
             <mat-icon>error_outline</mat-icon>
-            {{ errorConsulta }}
+            {{ errorConsulta() }}
           </p>
         }
       </mat-card-content>
@@ -176,7 +176,7 @@
           </div>
         </mat-card-content>
       </mat-card>
-    } @else if (!consultando && !errorConsulta) {
+    } @else if (!consultando() && !errorConsulta()) {
       <div class="reporte-sin-consulta">
         <button mat-stroked-button color="warn" type="button" (click)="abrirReporte()">
           <mat-icon>report_problem</mat-icon>

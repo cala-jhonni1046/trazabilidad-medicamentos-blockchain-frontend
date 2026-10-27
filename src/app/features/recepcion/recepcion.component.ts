@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -54,25 +54,50 @@ export class RecepcionComponent implements OnInit {
   readonly session = inject(SessionService);
 
   form!: FormGroup;
-  despachos: DespachoLogistico[] = [];
-  despachoSeleccionado?: DespachoLogistico;
-  eventosCustodia: EventoCustodia[] = [];
-  temperaturas: TelemetriaTemperatura[] = [];
-  ultimaTemperatura: TelemetriaTemperatura | null = null;
-  huboExcursionTermica = false;
 
-  recepcionesHistorial: RecepcionFarmaciaResponse[] = [];
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly despachos = signal<DespachoLogistico[]>([]);
+  readonly despachoSeleccionado = signal<DespachoLogistico | null>(null);
+  readonly eventosCustodia = signal<EventoCustodia[]>([]);
+  readonly temperaturas = signal<TelemetriaTemperatura[]>([]);
+  readonly huboExcursionTermica = signal(false);
 
-  cargando = false;
-  cargandoFicha = false;
-  enviando = false;
-  errorCarga: string | null = null;
-  errorFicha: string | null = null;
-  errorEnvio: string | null = null;
-  fieldErrors: Record<string, string> = {};
-  recepcionExitosa: RecepcionFarmaciaResponse | null = null;
+  readonly recepcionesHistorial = signal<RecepcionFarmaciaResponse[]>([]);
 
-  filtroBusqueda = '';
+  readonly cargando = signal(false);
+  readonly cargandoFicha = signal(false);
+  readonly enviando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly errorFicha = signal<string | null>(null);
+  readonly errorEnvio = signal<string | null>(null);
+  readonly fieldErrors = signal<Record<string, string>>({});
+  readonly recepcionExitosa = signal<RecepcionFarmaciaResponse | null>(null);
+
+  readonly filtroBusqueda = signal('');
+
+  readonly ultimaTemperatura = computed<TelemetriaTemperatura | null>(() => {
+    const lecturas = this.temperaturas();
+    return lecturas.length > 0 ? lecturas[lecturas.length - 1] : null;
+  });
+
+  readonly despachosFiltrados = computed(() => {
+    const term = this.filtroBusqueda().trim().toLowerCase();
+    const despachos = this.despachos();
+    if (!term) return despachos;
+    return despachos.filter(
+      (d) =>
+        (d.numeroRemito && d.numeroRemito.toLowerCase().includes(term)) ||
+        (d.codigoLote && d.codigoLote.toLowerCase().includes(term)) ||
+        (d.medicamentoNombre && d.medicamentoNombre.toLowerCase().includes(term)),
+    );
+  });
+
+  /** Depende del FormGroup (reactividad propia de Reactive Forms) y de huboExcursionTermica. */
+  get puedeMarcarConforme(): boolean {
+    const intacta = this.form.get('cadenaFrioIntacta')?.value === true;
+    return intacta && !this.huboExcursionTermica();
+  }
 
   readonly displayedColumnsHistorial: string[] = [
     'numeroComprobante',
@@ -112,74 +137,65 @@ export class RecepcionComponent implements OnInit {
   cargarDatos(): void {
     const farmaciaId = this.session.organizacion()?.id;
     if (!farmaciaId) {
-      this.errorCarga = 'No se ha detectado una organización farmacia en la sesión.';
+      this.errorCarga.set('No se ha detectado una organización farmacia en la sesión.');
       return;
     }
 
-    this.cargando = true;
-    this.errorCarga = null;
+    this.cargando.set(true);
+    this.errorCarga.set(null);
 
     forkJoin({
       despachos: this.api.getDespachosEnTransito(farmaciaId),
       historial: this.api.getRecepciones(farmaciaId),
     }).subscribe({
       next: ({ despachos, historial }) => {
-        this.despachos = despachos;
-        this.recepcionesHistorial = historial.sort((a, b) =>
-          (b.fechaHoraRecepcion || '').localeCompare(a.fechaHoraRecepcion || ''),
+        this.despachos.set(despachos);
+        this.recepcionesHistorial.set(
+          [...historial].sort((a, b) => (b.fechaHoraRecepcion || '').localeCompare(a.fechaHoraRecepcion || '')),
         );
-        this.cargando = false;
+        this.cargando.set(false);
 
-        if (this.despachos.length > 0) {
-          this.seleccionarDespacho(this.despachos[0].id);
+        if (despachos.length > 0) {
+          this.seleccionarDespacho(despachos[0].id);
         }
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargando = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargando.set(false);
       },
     });
   }
 
-  get despachosFiltrados(): DespachoLogistico[] {
-    const term = this.filtroBusqueda.trim().toLowerCase();
-    if (!term) return this.despachos;
-    return this.despachos.filter(
-      (d) =>
-        (d.numeroRemito && d.numeroRemito.toLowerCase().includes(term)) ||
-        (d.codigoLote && d.codigoLote.toLowerCase().includes(term)) ||
-        (d.medicamentoNombre && d.medicamentoNombre.toLowerCase().includes(term)),
-    );
-  }
-
   seleccionarDespacho(id: number): void {
-    this.despachoSeleccionado = this.despachos.find((d) => d.id === id);
+    const seleccionado = this.despachos().find((d) => d.id === id) ?? null;
+    this.despachoSeleccionado.set(seleccionado);
     this.form.patchValue({ despachoId: id });
-    this.recepcionExitosa = null;
-    this.errorEnvio = null;
+    this.recepcionExitosa.set(null);
+    this.errorEnvio.set(null);
 
-    if (this.despachoSeleccionado) {
+    if (seleccionado) {
       this.cargarAuditoriaDespacho(id);
     }
   }
 
   cargarAuditoriaDespacho(despachoId: number): void {
-    this.cargandoFicha = true;
-    this.errorFicha = null;
+    this.cargandoFicha.set(true);
+    this.errorFicha.set(null);
 
     forkJoin({
       eventos: this.api.getEventos(despachoId),
       temps: this.api.getTemperaturas(despachoId),
     }).subscribe({
       next: ({ eventos, temps }) => {
-        this.eventosCustodia = eventos.sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento));
-        this.temperaturas = temps.sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
+        this.eventosCustodia.set([...eventos].sort((a, b) => a.fechaHoraEvento.localeCompare(b.fechaHoraEvento)));
+        const temperaturas = [...temps].sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
+        this.temperaturas.set(temperaturas);
 
-        this.ultimaTemperatura = this.temperaturas.length > 0 ? this.temperaturas[this.temperaturas.length - 1] : null;
-        this.huboExcursionTermica = this.temperaturas.some((t) => t.alertaExcursion === true);
+        const huboExcursion = temperaturas.some((t) => t.alertaExcursion === true);
+        this.huboExcursionTermica.set(huboExcursion);
 
         // Si hubo excursión, preseleccionar cadena de frío no intacta y cambiar CONFORME a OBSERVADA
-        if (this.huboExcursionTermica) {
+        if (huboExcursion) {
           this.form.patchValue({
             cadenaFrioIntacta: false,
             estadoConformidad: 'OBSERVADA',
@@ -191,22 +207,18 @@ export class RecepcionComponent implements OnInit {
           });
         }
 
-        this.cargandoFicha = false;
+        this.cargandoFicha.set(false);
       },
       error: (err) => {
-        this.errorFicha = mensajeApi(err);
-        this.cargandoFicha = false;
+        this.errorFicha.set(mensajeApi(err));
+        this.cargandoFicha.set(false);
       },
     });
   }
 
-  get puedeMarcarConforme(): boolean {
-    const intacta = this.form.get('cadenaFrioIntacta')?.value === true;
-    return intacta && !this.huboExcursionTermica;
-  }
-
   guardarRecepcion(): void {
-    if (this.form.invalid || !this.despachoSeleccionado) {
+    const despachoSeleccionado = this.despachoSeleccionado();
+    if (this.form.invalid || !despachoSeleccionado) {
       this.form.markAllAsTouched();
       return;
     }
@@ -214,10 +226,10 @@ export class RecepcionComponent implements OnInit {
     const farmaciaId = this.session.organizacion()?.id;
     if (!farmaciaId) return;
 
-    this.enviando = true;
-    this.errorEnvio = null;
-    this.fieldErrors = {};
-    this.recepcionExitosa = null;
+    this.enviando.set(true);
+    this.errorEnvio.set(null);
+    this.fieldErrors.set({});
+    this.recepcionExitosa.set(null);
 
     const val = this.form.value;
     const request: RecepcionFarmaciaRequest = {
@@ -225,7 +237,7 @@ export class RecepcionComponent implements OnInit {
       fechaHoraRecepcion: val.fechaHoraRecepcion ? new Date(val.fechaHoraRecepcion).toISOString() : new Date().toISOString(),
       farmaciaId,
       farmaceuticoResponsable: val.farmaceuticoResponsable ? String(val.farmaceuticoResponsable).trim() : null,
-      despachoLogisticoId: this.despachoSeleccionado.id,
+      despachoLogisticoId: despachoSeleccionado.id,
       estadoConformidad: val.estadoConformidad as EstadoConformidad,
       cadenaFrioIntacta: !!val.cadenaFrioIntacta,
       observaciones: val.observaciones ? String(val.observaciones).trim() : null,
@@ -233,14 +245,14 @@ export class RecepcionComponent implements OnInit {
 
     this.api.crearRecepcion(request).subscribe({
       next: (res) => {
-        this.enviando = false;
-        this.recepcionExitosa = res;
+        this.enviando.set(false);
+        this.recepcionExitosa.set(res);
         this.cargarDatos();
       },
       error: (err) => {
-        this.enviando = false;
-        this.errorEnvio = mensajeApi(err);
-        this.fieldErrors = extraerFieldErrors(err);
+        this.enviando.set(false);
+        this.errorEnvio.set(mensajeApi(err));
+        this.fieldErrors.set(extraerFieldErrors(err));
       },
     });
   }

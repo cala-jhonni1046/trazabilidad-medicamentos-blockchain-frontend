@@ -72,8 +72,8 @@ describe('Despachos Components', () => {
         },
       ]);
 
-      expect(fixture.componentInstance.lotes.length).toBe(1);
-      expect(fixture.componentInstance.enlaces.length).toBe(1);
+      expect(fixture.componentInstance.lotes().length).toBe(1);
+      expect(fixture.componentInstance.enlaces().length).toBe(1);
 
       fixture.componentInstance.onLoteChange(1);
       expect(fixture.componentInstance.form.get('temperaturaMinimaPermitida')?.value).toBe(2);
@@ -104,12 +104,12 @@ describe('Despachos Components', () => {
         { id: 2, numeroRemito: 'R-002', estado: 'EN_TRANSITO', laboratorioId: 10 },
       ]);
 
-      expect(fixture.componentInstance.despachos.length).toBe(2);
-      expect(fixture.componentInstance.despachosFiltrados.length).toBe(2);
+      expect(fixture.componentInstance.despachos().length).toBe(2);
+      expect(fixture.componentInstance.despachosFiltrados().length).toBe(2);
 
-      fixture.componentInstance.filtroEstado = 'PREPARADO';
-      expect(fixture.componentInstance.despachosFiltrados.length).toBe(1);
-      expect(fixture.componentInstance.despachosFiltrados[0].numeroRemito).toBe('R-001');
+      fixture.componentInstance.filtroEstado.set('PREPARADO');
+      expect(fixture.componentInstance.despachosFiltrados().length).toBe(1);
+      expect(fixture.componentInstance.despachosFiltrados()[0].numeroRemito).toBe('R-001');
     });
   });
 
@@ -137,9 +137,9 @@ describe('Despachos Components', () => {
         },
       ]);
 
-      expect(fixture.componentInstance.despacho?.numeroRemito).toBe('R-001');
-      expect(fixture.componentInstance.eventos.length).toBe(1);
-      expect(fixture.componentInstance.puedeVerTextosInternos).toBe(true);
+      expect(fixture.componentInstance.despacho()?.numeroRemito).toBe('R-001');
+      expect(fixture.componentInstance.eventos().length).toBe(1);
+      expect(fixture.componentInstance.puedeVerTextosInternos()).toBe(true);
     });
   });
 });

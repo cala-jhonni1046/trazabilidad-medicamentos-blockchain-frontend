@@ -12,26 +12,26 @@
     </div>
   </app-page-header>
 
-  <app-loading-overlay [loading]="cargandoDatos" message="Cargando lotes y enlaces autorizados…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargandoDatos()" message="Cargando lotes y enlaces autorizados…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarDatosIniciales()"
   ></app-error-alert>
 
-  <div *ngIf="!cargandoDatos && !errorCarga">
-    <div *ngIf="lotes.length === 0" class="aviso-bloqueante">
+  <div *ngIf="!cargandoDatos() && !errorCarga()">
+    <div *ngIf="lotes().length === 0" class="aviso-bloqueante">
       <mat-icon>info</mat-icon>
       <p>No se encontraron lotes disponibles para tu laboratorio. Primero debes tener un lote registrado.</p>
     </div>
 
-    <div *ngIf="enlaces.length === 0" class="aviso-bloqueante">
+    <div *ngIf="enlaces().length === 0" class="aviso-bloqueante">
       <mat-icon>warning</mat-icon>
       <p>No tienes enlaces CUIT en estado ACTIVO. Se requiere un enlace aprobado por ANMAT entre tu laboratorio, un distribuidor y una farmacia.</p>
     </div>
 
-    <mat-card *ngIf="lotes.length > 0 && enlaces.length > 0" class="form-card" appearance="outlined">
+    <mat-card *ngIf="lotes().length > 0 && enlaces().length > 0" class="form-card" appearance="outlined">
       <mat-card-header>
         <mat-card-title>Datos del despacho</mat-card-title>
         <mat-card-subtitle>Completa los datos del remito y las condiciones del traslado</mat-card-subtitle>
@@ -39,9 +39,9 @@
 
       <mat-card-content>
         <app-error-alert
-          *ngIf="errorEnvio"
-          [message]="errorEnvio"
-          [fieldErrors]="fieldErrors"
+          *ngIf="errorEnvio()"
+          [message]="errorEnvio()"
+          [fieldErrors]="fieldErrors()"
           [showRetry]="false"
         ></app-error-alert>
 
@@ -51,7 +51,7 @@
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Lote a despachar</mat-label>
               <mat-select formControlName="loteId" (valueChange)="onLoteChange($event)" required>
-                <mat-option *ngFor="let lote of lotes" [value]="lote.id">
+                <mat-option *ngFor="let lote of lotes()" [value]="lote.id">
                   {{ lote.codigoLote }} — {{ lote.medicamentoNombre || 'Medicamento' }} (Estado: {{ lote.estado || 'CREADO' }})
                 </mat-option>
               </mat-select>
@@ -64,7 +64,7 @@
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Enlace CUIT activo (Distribuidor y Farmacia)</mat-label>
               <mat-select formControlName="enlaceCuitId" (valueChange)="onEnlaceChange($event)" required>
-                <mat-option *ngFor="let e of enlaces" [value]="e.id">
+                <mat-option *ngFor="let e of enlaces()" [value]="e.id">
                   Enlace #{{ e.id }}: Distribuidor {{ e.distribuidorNombre || e.distribuidorCuit }} ➔ Farmacia {{ e.farmaciaNombre || e.farmaciaCuit }}
                 </mat-option>
               </mat-select>
@@ -73,14 +73,14 @@
           </div>
 
           <!-- Ficha informativa de los actores del enlace -->
-          <div *ngIf="enlaceSeleccionado" class="enlace-info-box">
+          <div *ngIf="enlaceSeleccionado() as enlaceSel" class="enlace-info-box">
             <div class="info-item">
               <span class="info-label">Distribuidor asignado:</span>
-              <span class="info-val"><strong>{{ enlaceSeleccionado.distribuidorNombre || 'Distribuidor' }}</strong> (CUIT: {{ enlaceSeleccionado.distribuidorCuit }})</span>
+              <span class="info-val"><strong>{{ enlaceSel.distribuidorNombre || 'Distribuidor' }}</strong> (CUIT: {{ enlaceSel.distribuidorCuit }})</span>
             </div>
             <div class="info-item">
               <span class="info-label">Farmacia de destino:</span>
-              <span class="info-val"><strong>{{ enlaceSeleccionado.farmaciaNombre || 'Farmacia' }}</strong> (CUIT: {{ enlaceSeleccionado.farmaciaCuit }})</span>
+              <span class="info-val"><strong>{{ enlaceSel.farmaciaNombre || 'Farmacia' }}</strong> (CUIT: {{ enlaceSel.farmaciaCuit }})</span>
             </div>
             <p class="nota-auto">El distribuidor y la farmacia se configuran automáticamente desde el enlace CUIT autorizado.</p>
           </div>
@@ -91,7 +91,7 @@
               <mat-label>Número de remito</mat-label>
               <input matInput formControlName="numeroRemito" placeholder="Ej: REM-2026-0001" required />
               <mat-error *ngIf="form.get('numeroRemito')?.hasError('required')">El remito es obligatorio</mat-error>
-              <mat-error *ngIf="fieldErrors['numeroRemito']">{{ fieldErrors['numeroRemito'] }}</mat-error>
+              <mat-error *ngIf="fieldErrors()['numeroRemito']">{{ fieldErrors()['numeroRemito'] }}</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -135,13 +135,13 @@
           </div>
 
           <div class="form-actions">
-            <button mat-button type="button" routerLink="/despachos" [disabled]="guardando">
+            <button mat-button type="button" routerLink="/despachos" [disabled]="guardando()">
               Cancelar
             </button>
-            <button mat-flat-button color="primary" type="submit" [disabled]="guardando || form.invalid">
-              <mat-icon *ngIf="guardando">hourglass_empty</mat-icon>
-              <mat-icon *ngIf="!guardando">check</mat-icon>
-              {{ guardando ? 'Guardando despacho…' : 'Crear despacho (PREPARADO)' }}
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando() || form.invalid">
+              <mat-icon *ngIf="guardando()">hourglass_empty</mat-icon>
+              <mat-icon *ngIf="!guardando()">check</mat-icon>
+              {{ guardando() ? 'Guardando despacho…' : 'Crear despacho (PREPARADO)' }}
             </button>
           </div>
         </form>

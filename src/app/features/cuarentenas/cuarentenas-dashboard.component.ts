@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -52,19 +52,23 @@ export class CuarentenasDashboardComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
 
-  cargando = false;
-  errorCarga: string | null = null;
-  accionEnCurso = false;
-  errorAccion: string | null = null;
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly cargando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly accionEnCurso = signal(false);
+  readonly errorAccion = signal<string | null>(null);
 
   // Métricas superiores
-  cadenasActivasCount = 0;
-  lotesEnCuarentenaCount = 0;
-  reportesPendientesCount = 0;
+  readonly cadenasActivasCount = signal(0);
+  readonly lotesEnCuarentenaCount = signal(0);
+  readonly reportesPendientesCount = signal(0);
 
   // Listas de datos
-  lotesConTelemetria: LoteConTelemetria[] = [];
-  historialCuarentenas: CuarentenaDTO[] = [];
+  readonly lotesConTelemetria = signal<LoteConTelemetria[]>([]);
+  readonly historialCuarentenas = signal<CuarentenaDTO[]>([]);
+
+  readonly puedeOperar = computed(() => this.session.puedeResolver());
 
   readonly displayedColumnsLotes: string[] = [
     'codigoLote',
@@ -88,13 +92,9 @@ export class CuarentenasDashboardComponent implements OnInit {
     this.cargarDashboard();
   }
 
-  get puedeOperar(): boolean {
-    return this.session.puedeResolver();
-  }
-
   cargarDashboard(): void {
-    this.cargando = true;
-    this.errorCarga = null;
+    this.cargando.set(true);
+    this.errorCarga.set(null);
 
     forkJoin({
       lotes: this.api.getLotes().pipe(catchError(() => of([]))),
@@ -105,67 +105,67 @@ export class CuarentenasDashboardComponent implements OnInit {
       reportes: this.api.getReportesPendientes().pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ lotes, cuarentenas, despachos, temperaturas, enlaces, reportes }) => {
-        this.historialCuarentenas = cuarentenas.sort((a, b) =>
-          b.fechaInicio.localeCompare(a.fechaInicio),
-        );
+        this.historialCuarentenas.set([...cuarentenas].sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio)));
 
         const cuarentenasAbiertas = cuarentenas.filter((c) => c.estado === 'ABIERTA');
-        this.lotesEnCuarentenaCount = cuarentenasAbiertas.length;
-        cuarentenasAbiertasCount.set(this.lotesEnCuarentenaCount);
-        this.cadenasActivasCount = enlaces.length;
-        this.reportesPendientesCount = reportes.length;
+        this.lotesEnCuarentenaCount.set(cuarentenasAbiertas.length);
+        cuarentenasAbiertasCount.set(cuarentenasAbiertas.length);
+        this.cadenasActivasCount.set(enlaces.length);
+        this.reportesPendientesCount.set(reportes.length);
 
         // Combinar datos por lote
-        this.lotesConTelemetria = lotes.map((lote) => {
-          // Despacho más reciente del lote
-          const despachosLote = despachos.filter((d) => d.loteId === lote.id);
-          const ultimoDespacho = despachosLote.length > 0 ? despachosLote[despachosLote.length - 1] : undefined;
+        this.lotesConTelemetria.set(
+          lotes.map((lote) => {
+            // Despacho más reciente del lote
+            const despachosLote = despachos.filter((d) => d.loteId === lote.id);
+            const ultimoDespacho = despachosLote.length > 0 ? despachosLote[despachosLote.length - 1] : undefined;
 
-          // Última lectura térmica del despacho
-          let ultimaTemp: number | null = null;
-          let alertaExcursion: boolean | null = null;
+            // Última lectura térmica del despacho
+            let ultimaTemp: number | null = null;
+            let alertaExcursion: boolean | null = null;
 
-          if (ultimoDespacho) {
-            const tempsDespacho = temperaturas
-              .filter((t) => t.despachoLogisticoId === ultimoDespacho.id)
-              .sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
+            if (ultimoDespacho) {
+              const tempsDespacho = temperaturas
+                .filter((t) => t.despachoLogisticoId === ultimoDespacho.id)
+                .sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
 
-            if (tempsDespacho.length > 0) {
-              const ult = tempsDespacho[tempsDespacho.length - 1];
-              ultimaTemp = ult.temperatura;
-              alertaExcursion = ult.alertaExcursion ?? null;
+              if (tempsDespacho.length > 0) {
+                const ult = tempsDespacho[tempsDespacho.length - 1];
+                ultimaTemp = ult.temperatura;
+                alertaExcursion = ult.alertaExcursion ?? null;
+              }
             }
-          }
 
-          // Enlace CUIT asociado al laboratorio
-          const enlaceLote = enlaces.find((e) => e.laboratorioId === lote.laboratorioId);
+            // Enlace CUIT asociado al laboratorio
+            const enlaceLote = enlaces.find((e) => e.laboratorioId === lote.laboratorioId);
 
-          // Cuarentena abierta del lote si existe
-          const cuaAbierta = cuarentenasAbiertas.find((c) => c.loteId === lote.id) || null;
+            // Cuarentena abierta del lote si existe
+            const cuaAbierta = cuarentenasAbiertas.find((c) => c.loteId === lote.id) || null;
 
-          return {
-            id: lote.id,
-            codigoLote: lote.codigoLote,
-            medicamentoNombre: lote.medicamentoNombre || 'Medicamento',
-            laboratorioNombre: lote.laboratorioNombre || 'Laboratorio',
-            laboratorioCuit: lote.laboratorioCuit || '—',
-            estado: cuaAbierta ? 'EN_CUARENTENA' : (lote.estado || 'CREADO'),
-            distribuidorNombre: enlaceLote?.distribuidorNombre,
-            distribuidorCuit: enlaceLote?.distribuidorCuit,
-            farmaciaNombre: enlaceLote?.farmaciaNombre,
-            farmaciaCuit: enlaceLote?.farmaciaCuit,
-            ultimaTemperatura: ultimaTemp,
-            alertaExcursion: alertaExcursion,
-            despachoId: ultimoDespacho?.id,
-            cuarentenaAbierta: cuaAbierta,
-          };
-        });
+            return {
+              id: lote.id,
+              codigoLote: lote.codigoLote,
+              medicamentoNombre: lote.medicamentoNombre || 'Medicamento',
+              laboratorioNombre: lote.laboratorioNombre || 'Laboratorio',
+              laboratorioCuit: lote.laboratorioCuit || '—',
+              estado: cuaAbierta ? 'EN_CUARENTENA' : (lote.estado || 'CREADO'),
+              distribuidorNombre: enlaceLote?.distribuidorNombre,
+              distribuidorCuit: enlaceLote?.distribuidorCuit,
+              farmaciaNombre: enlaceLote?.farmaciaNombre,
+              farmaciaCuit: enlaceLote?.farmaciaCuit,
+              ultimaTemperatura: ultimaTemp,
+              alertaExcursion: alertaExcursion,
+              despachoId: ultimoDespacho?.id,
+              cuarentenaAbierta: cuaAbierta,
+            };
+          }),
+        );
 
-        this.cargando = false;
+        this.cargando.set(false);
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargando = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargando.set(false);
       },
     });
   }
@@ -184,17 +184,17 @@ export class CuarentenasDashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe((request) => {
       if (!request) return;
 
-      this.accionEnCurso = true;
-      this.errorAccion = null;
+      this.accionEnCurso.set(true);
+      this.errorAccion.set(null);
 
       this.api.abrirCuarentena(request).subscribe({
         next: () => {
-          this.accionEnCurso = false;
+          this.accionEnCurso.set(false);
           this.cargarDashboard();
         },
         error: (err) => {
-          this.accionEnCurso = false;
-          this.errorAccion = mensajeApi(err);
+          this.accionEnCurso.set(false);
+          this.errorAccion.set(mensajeApi(err));
         },
       });
     });
@@ -214,8 +214,8 @@ export class CuarentenasDashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe((request) => {
       if (!request) return;
 
-      this.accionEnCurso = true;
-      this.errorAccion = null;
+      this.accionEnCurso.set(true);
+      this.errorAccion.set(null);
 
       const call =
         accion === 'LIBERAR'
@@ -224,12 +224,12 @@ export class CuarentenasDashboardComponent implements OnInit {
 
       call.subscribe({
         next: () => {
-          this.accionEnCurso = false;
+          this.accionEnCurso.set(false);
           this.cargarDashboard();
         },
         error: (err) => {
-          this.accionEnCurso = false;
-          this.errorAccion = mensajeApi(err);
+          this.accionEnCurso.set(false);
+          this.errorAccion.set(mensajeApi(err));
         },
       });
     });

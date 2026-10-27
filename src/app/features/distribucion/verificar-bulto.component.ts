@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -42,15 +42,18 @@ export class VerificarBultoComponent implements OnInit {
   readonly session = inject(SessionService);
 
   form!: FormGroup;
-  despachos: DespachoLogistico[] = [];
-  despachoSeleccionado?: DespachoLogistico;
 
-  cargandoDespachos = false;
-  verificando = false;
-  errorCarga: string | null = null;
-  errorVerificacion: string | null = null;
+  // App zoneless: lo que se modifica en subscribe/next/error y se lee en la plantilla
+  // debe ser signal; un campo común no repinta la vista.
+  readonly despachos = signal<DespachoLogistico[]>([]);
+  readonly despachoSeleccionado = signal<DespachoLogistico | null>(null);
 
-  resultado: ResultadoVerificacionBulto | null = null;
+  readonly cargandoDespachos = signal(false);
+  readonly verificando = signal(false);
+  readonly errorCarga = signal<string | null>(null);
+  readonly errorVerificacion = signal<string | null>(null);
+
+  readonly resultado = signal<ResultadoVerificacionBulto | null>(null);
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -64,70 +67,68 @@ export class VerificarBultoComponent implements OnInit {
   cargarDespachos(): void {
     const org = this.session.organizacion();
     if (!org) {
-      this.errorCarga = 'No se ha detectado una organización distribuidora en la sesión.';
+      this.errorCarga.set('No se ha detectado una organización distribuidora en la sesión.');
       return;
     }
 
-    this.cargandoDespachos = true;
-    this.errorCarga = null;
+    this.cargandoDespachos.set(true);
+    this.errorCarga.set(null);
 
     this.api.getDespachosDistribuidor(org.id).subscribe({
       next: (data) => {
         // Solo despachos PREPARADO o EN_TRANSITO
-        this.despachos = data.filter(
-          (d) => d.estado === 'PREPARADO' || d.estado === 'EN_TRANSITO',
-        );
-        this.cargandoDespachos = false;
+        this.despachos.set(data.filter((d) => d.estado === 'PREPARADO' || d.estado === 'EN_TRANSITO'));
+        this.cargandoDespachos.set(false);
       },
       error: (err) => {
-        this.errorCarga = mensajeApi(err);
-        this.cargandoDespachos = false;
+        this.errorCarga.set(mensajeApi(err));
+        this.cargandoDespachos.set(false);
       },
     });
   }
 
   onDespachoChange(id: number): void {
-    this.despachoSeleccionado = this.despachos.find((d) => d.id === id);
-    this.resultado = null;
-    this.errorVerificacion = null;
+    this.despachoSeleccionado.set(this.despachos().find((d) => d.id === id) ?? null);
+    this.resultado.set(null);
+    this.errorVerificacion.set(null);
   }
 
   verificar(): void {
-    if (this.form.invalid || !this.despachoSeleccionado) {
+    const despacho = this.despachoSeleccionado();
+    if (this.form.invalid || !despacho) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.verificando = true;
-    this.errorVerificacion = null;
-    this.resultado = null;
+    this.verificando.set(true);
+    this.errorVerificacion.set(null);
+    this.resultado.set(null);
 
     const codigoQr = String(this.form.value.codigoQr).trim();
-    const despacho = this.despachoSeleccionado;
 
     this.api.consultarUnidadPorQr(codigoQr).subscribe({
       next: (unidad) => {
         // Validar que pertenezca al lote del despacho
         if (unidad.loteId !== despacho.loteId) {
-          this.verificando = false;
-          this.resultado = {
+          this.verificando.set(false);
+          this.resultado.set({
             valido: false,
             motivo: `El bulto escaneado pertenece al Lote #${unidad.loteId} (${unidad.codigoLote || 'otro lote'}), pero el despacho seleccionado corresponde al Lote #${despacho.loteId} (${despacho.codigoLote || ''}).`,
             unidad,
             eventoRegistrado: false,
-          };
+          });
           return;
         }
 
         // Validar que no esté bloqueada
         if (unidad.estado === 'BLOQUEADA') {
-          this.verificando = false;
-          this.resultado = {
+          this.verificando.set(false);
+          this.resultado.set({
             valido: false,
             motivo: 'La unidad trazable se encuentra en estado BLOQUEADA por auditoría regulatoria o reporte.',
             unidad,
             eventoRegistrado: false,
-          };
+          });
           return;
         }
 
@@ -144,34 +145,34 @@ export class VerificarBultoComponent implements OnInit {
           })
           .subscribe({
             next: () => {
-              this.verificando = false;
-              this.resultado = {
+              this.verificando.set(false);
+              this.resultado.set({
                 valido: true,
                 unidad,
                 eventoRegistrado: true,
-              };
+              });
             },
             error: (errEvento) => {
-              this.verificando = false;
+              this.verificando.set(false);
               // Si falla por 409 (ej: lote en cuarentena)
-              this.errorVerificacion = mensajeApi(errEvento);
-              this.resultado = {
+              this.errorVerificacion.set(mensajeApi(errEvento));
+              this.resultado.set({
                 valido: false,
                 motivo: mensajeApi(errEvento),
                 unidad,
                 eventoRegistrado: false,
-              };
+              });
             },
           });
       },
       error: (err) => {
-        this.verificando = false;
-        this.errorVerificacion = mensajeApi(err);
-        this.resultado = {
+        this.verificando.set(false);
+        this.errorVerificacion.set(mensajeApi(err));
+        this.resultado.set({
           valido: false,
           motivo: 'El código QR ingresado no existe en el registro de unidades trazables.',
           eventoRegistrado: false,
-        };
+        });
       },
     });
   }

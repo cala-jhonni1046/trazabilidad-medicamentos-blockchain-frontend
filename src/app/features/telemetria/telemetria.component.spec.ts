@@ -102,7 +102,7 @@ describe('Telemetria Components', () => {
       reqTemp.flush({ id: 2, sensorId: 'IOT-TERM-01', temperatura: 12.0, alertaExcursion: true });
 
       expect(emitido).toBe(true);
-      expect(fixture.componentInstance.resultadoAlerta).toBe(true);
+      expect(fixture.componentInstance.resultadoAlerta()).toBe(true);
     });
   });
 
@@ -119,14 +119,14 @@ describe('Telemetria Components', () => {
       const req = httpMock.expectOne('/api/despachos-logisticos?estado=EN_TRANSITO');
       req.flush([]);
 
-      expect(fixture.componentInstance.esAnmatOSuperadmin).toBe(true);
+      expect(fixture.componentInstance.esAnmatOSuperadmin()).toBe(true);
 
       // Cambiar a LABORATORIO
       sessionService.iniciarSesion(
         { id: 2, email: 'lab@medichain.gob.ar', rol: 'LABORATORIO', activo: true },
         { id: 5, nombre: 'Lab', cuit: '30-11', tipo: 'LABORATORIO' },
       );
-      expect(fixture.componentInstance.esAnmatOSuperadmin).toBe(false);
+      expect(fixture.componentInstance.esAnmatOSuperadmin()).toBe(false);
     });
   });
 });

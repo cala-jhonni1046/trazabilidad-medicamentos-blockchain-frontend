@@ -9,7 +9,7 @@
         <mat-icon>qr_code_scanner</mat-icon>
         Verificar bulto (QR)
       </a>
-      <button mat-stroked-button (click)="cargarCargasAsignadas()" [disabled]="cargando">
+      <button mat-stroked-button (click)="cargarCargasAsignadas()" [disabled]="cargando()">
         <mat-icon>refresh</mat-icon>
         Actualizar
       </button>
@@ -17,29 +17,29 @@
   </app-page-header>
 
   <app-error-alert
-    *ngIf="errorAccion"
-    [message]="errorAccion"
+    *ngIf="errorAccion()"
+    [message]="errorAccion()"
     [showRetry]="false"
   ></app-error-alert>
 
-  <app-loading-overlay [loading]="cargando" message="Cargando despachos asignados a tu distribución…"></app-loading-overlay>
+  <app-loading-overlay [loading]="cargando()" message="Cargando despachos asignados a tu distribución…"></app-loading-overlay>
 
   <app-error-alert
-    *ngIf="errorCarga"
-    [message]="errorCarga"
+    *ngIf="errorCarga()"
+    [message]="errorCarga()"
     (retry)="cargarCargasAsignadas()"
   ></app-error-alert>
 
-  <div *ngIf="!cargando && !errorCarga">
+  <div *ngIf="!cargando() && !errorCarga()">
     <app-empty-state
-      *ngIf="cargas.length === 0"
+      *ngIf="cargas().length === 0"
       icon="inventory_2"
       title="No tienes cargas asignadas"
       description="Actualmente no hay despachos registrados para tu organización distribuidora."
     ></app-empty-state>
 
-    <div *ngIf="cargas.length > 0" class="table-responsive">
-      <table mat-table [dataSource]="cargas" class="mat-elevation-z1">
+    <div *ngIf="cargas().length > 0" class="table-responsive">
+      <table mat-table [dataSource]="cargas()" class="mat-elevation-z1">
         <!-- Número de Remito -->
         <ng-container matColumnDef="numeroRemito">
           <th mat-header-cell *matHeaderCellDef>Remito</th>
@@ -106,7 +106,7 @@
               mat-flat-button
               color="primary"
               (click)="asumirCustodia(d)"
-              [disabled]="accionEnCursoId === d.id"
+              [disabled]="accionEnCursoId() === d.id"
               title="Asumir custodia e iniciar transporte"
             >
               <mat-icon>play_arrow</mat-icon>

@@ -55,8 +55,8 @@ describe('RecepcionComponent', () => {
       { id: 1, temperatura: 4.5, alertaExcursion: false, fechaHora: '2026-10-24T12:00:00' },
     ]);
 
-    expect(fixture.componentInstance.despachos.length).toBe(1);
-    expect(fixture.componentInstance.huboExcursionTermica).toBe(false);
+    expect(fixture.componentInstance.despachos().length).toBe(1);
+    expect(fixture.componentInstance.huboExcursionTermica()).toBe(false);
     expect(fixture.componentInstance.puedeMarcarConforme).toBe(true);
 
     // Completar comprobante y enviar
@@ -100,7 +100,7 @@ describe('RecepcionComponent', () => {
       { id: 1, temperatura: 15.0, alertaExcursion: true, fechaHora: '2026-10-24T12:00:00' },
     ]);
 
-    expect(fixture.componentInstance.huboExcursionTermica).toBe(true);
+    expect(fixture.componentInstance.huboExcursionTermica()).toBe(true);
     expect(fixture.componentInstance.puedeMarcarConforme).toBe(false);
     expect(fixture.componentInstance.form.get('cadenaFrioIntacta')?.value).toBe(false);
     expect(fixture.componentInstance.form.get('estadoConformidad')?.value).toBe('OBSERVADA');

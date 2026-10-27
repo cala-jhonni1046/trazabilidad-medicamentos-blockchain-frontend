@@ -63,8 +63,10 @@ export class PortalComponent {
   readonly resumenConfig = RESUMEN_CONFIG;
 
   codigoQr = '';
-  consultando = false;
-  errorConsulta = '';
+  // App zoneless: se modifican dentro de subscribe/next/error/finalize y se leen en
+  // la plantilla, por eso deben ser signal (un campo común no repinta la vista).
+  readonly consultando = signal(false);
+  readonly errorConsulta = signal('');
   resultado = signal<ConsultaPublicaQR | null>(null);
   /** Se guarda aparte: si la última consulta fue 404, no se precarga ese QR en el reporte. */
   private ultimaConsultaOk = false;
@@ -78,22 +80,22 @@ export class PortalComponent {
   }
 
   consultar(): void {
-    if (this.consultando) return;
+    if (this.consultando()) return;
     const codigo = this.codigoQr.trim();
-    this.errorConsulta = '';
+    this.errorConsulta.set('');
     this.resultado.set(null);
     this.reporteConfirmadoId.set(null);
     this.ultimaConsultaOk = false;
     if (!codigo) {
-      this.errorConsulta = 'Ingresá un código QR.';
+      this.errorConsulta.set('Ingresá un código QR.');
       return;
     }
-    this.consultando = true;
+    this.consultando.set(true);
     this.api
       .consultarQr(codigo)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => (this.consultando = false)),
+        finalize(() => this.consultando.set(false)),
       )
       .subscribe({
         next: (r) => {
@@ -102,9 +104,7 @@ export class PortalComponent {
         },
         error: (err: unknown) => {
           // No se revelan detalles internos: 404 → mensaje fijo.
-          this.errorConsulta = this.esNoEncontrado(err)
-            ? 'Código no encontrado.'
-            : mensajeApi(err);
+          this.errorConsulta.set(this.esNoEncontrado(err) ? 'Código no encontrado.' : mensajeApi(err));
         },
       });
   }
