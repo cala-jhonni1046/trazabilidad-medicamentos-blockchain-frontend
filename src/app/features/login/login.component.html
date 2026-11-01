@@ -1,178 +1,422 @@
-<div class="login-page">
-  <!-- Banner aviso académico -->
-  <div class="demo-ribbon" role="alert" aria-live="polite">
-    <mat-icon class="ribbon-icon">science</mat-icon>
-    <span>
-      <strong>Sesión simulada</strong> — Sin autenticación real. MVP académico. No ingreses datos personales reales.
-    </span>
-  </div>
+<div class="login-container" [class.dark-theme]="isDarkMode()">
+    <!-- Panel izquierdo: el recorrido de la caja -->
+    <div class="left-panel">
+        <svg class="left-bg-svg" aria-hidden="true" viewBox="0 0 740 780" preserveAspectRatio="xMidYMax meet">
+            <defs>
+                <linearGradient id="gT" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#9BD6F8"></stop>
+                    <stop offset="1" stop-color="#3A8CC8"></stop>
+                </linearGradient>
+                <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#2F86C2"></stop>
+                    <stop offset="1" stop-color="#123F63"></stop>
+                </linearGradient>
+                <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#124773"></stop>
+                    <stop offset="1" stop-color="#08213A"></stop>
+                </linearGradient>
+                <linearGradient id="aT" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#C9FBE2"></stop>
+                    <stop offset="1" stop-color="#34D399"></stop>
+                </linearGradient>
+                <linearGradient id="aL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#22C07F"></stop>
+                    <stop offset="1" stop-color="#0B6B49"></stop>
+                </linearGradient>
+                <linearGradient id="aR" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#12905F"></stop>
+                    <stop offset="1" stop-color="#064632"></stop>
+                </linearGradient>
+                <radialGradient id="orbe">
+                    <stop offset="0" stop-color="#E9FFF4"></stop>
+                    <stop offset="0.35" stop-color="#3DDC97"></stop>
+                    <stop offset="1" stop-color="#3DDC97" stop-opacity="0"></stop>
+                </radialGradient>
+                <linearGradient id="rT" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#FFD3D8"></stop>
+                    <stop offset="1" stop-color="#FF5C6C"></stop>
+                </linearGradient>
+                <linearGradient id="rL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#F0475C"></stop>
+                    <stop offset="1" stop-color="#8A1626"></stop>
+                </linearGradient>
+                <linearGradient id="rR" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#C42C42"></stop>
+                    <stop offset="1" stop-color="#560A18"></stop>
+                </linearGradient>
+                <radialGradient id="orbeR">
+                    <stop offset="0" stop-color="#FFF0F1"></stop>
+                    <stop offset="0.35" stop-color="#FF5C6C"></stop>
+                    <stop offset="1" stop-color="#FF5C6C" stop-opacity="0"></stop>
+                </radialGradient>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="8"></feGaussianBlur>
+                </filter>
 
-  <div class="login-wrapper">
-    <!-- Cabecera con marca -->
-    <div class="brand-header">
-      <div class="brand-icon">
-        <mat-icon>health_and_safety</mat-icon>
-      </div>
-      <div class="brand-text">
-        <h1 class="brand-title">MediChain</h1>
-        <p class="brand-sub">Trazabilidad Farmacéutica · Demo Académica</p>
-      </div>
+                <g id="cubo">
+                    <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                    <polygon points="0,0 44,25 0,50 -44,25" fill="url(#gT)" stroke="#D6EEFC"
+                        stroke-opacity="0.8" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF"
+                        stroke-opacity="0.65" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                    <circle cx="0" cy="25" r="3" fill="#FFFFFF" fill-opacity="0.95"></circle>
+                    <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#gL)" stroke="#D6EEFC"
+                        stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,50 44,25 44,75 0,100" fill="url(#gR)" stroke="#D6EEFC"
+                        stroke-opacity="0.4" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                        stroke-width="1.6"></line>
+                    <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                    <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                        <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.6"></rect>
+                        <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.42"></rect>
+                        <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.34"></rect>
+                    </g>
+                    <g transform="matrix(44 -25 0 50 0 50)" fill="#FFFFFF">
+                        <rect x="0.16" y="0.2" width="0.6" height="0.06" opacity="0.3"></rect>
+                        <rect x="0.16" y="0.4" width="0.42" height="0.06" opacity="0.22"></rect>
+                    </g>
+                </g>
+
+                <g id="cuboA">
+                    <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                    <polygon points="0,0 44,25 0,50 -44,25" fill="url(#aT)" stroke="#E3FFF1"
+                        stroke-opacity="0.9" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.22" stroke="#FFFFFF"
+                        stroke-opacity="0.8" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                    <path d="M-9 25 l6 6 l12 -12" fill="none" stroke="#064632" stroke-width="3.4"
+                        stroke-linecap="round" stroke-linejoin="round"></path>
+                    <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#aL)" stroke="#E3FFF1"
+                        stroke-opacity="0.6" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,50 44,25 44,75 0,100" fill="url(#aR)" stroke="#E3FFF1"
+                        stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                        stroke-width="1.6"></line>
+                    <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                    <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                        <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.7"></rect>
+                        <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.5"></rect>
+                        <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.4"></rect>
+                    </g>
+                </g>
+
+                <g id="cuboR">
+                    <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                    <polygon points="0,0 44,25 0,50 -44,25" fill="url(#rT)" stroke="#FFE9EB"
+                        stroke-opacity="0.9" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.22" stroke="#FFFFFF"
+                        stroke-opacity="0.8" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                    <path d="M0 18 L0 27" fill="none" stroke="#4A0A14" stroke-width="3.4"
+                        stroke-linecap="round"></path>
+                    <circle cx="0" cy="32" r="2" fill="#4A0A14"></circle>
+                    <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#rL)" stroke="#FFE9EB"
+                        stroke-opacity="0.6" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <polygon points="0,50 44,25 44,75 0,100" fill="url(#rR)" stroke="#FFE9EB"
+                        stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                    <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                        stroke-width="1.6"></line>
+                    <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                    <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                    <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                        <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.7"></rect>
+                        <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.5"></rect>
+                        <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.4"></rect>
+                    </g>
+                </g>
+                <pattern id="iso" width="88" height="50" patternUnits="userSpaceOnUse">
+                    <path d="M0 25 L44 0 L88 25 L44 50 Z" fill="none" stroke="#7DB9E6" stroke-opacity="0.4"
+                        stroke-width="1"></path>
+                </pattern>
+                <radialGradient id="fadeM" cx="0.55" cy="0.66" r="0.58">
+                    <stop offset="0" stop-color="#FFFFFF"></stop>
+                    <stop offset="1" stop-color="#000000"></stop>
+                </radialGradient>
+                <mask id="mfloor" maskUnits="userSpaceOnUse" x="0" y="0" width="740" height="780">
+                    <rect width="740" height="780" fill="url(#fadeM)"></rect>
+                </mask>
+            </defs>
+
+            <!-- suelo isométrico -->
+            <rect x="0" y="0" width="740" height="780" fill="url(#iso)" mask="url(#mfloor)"></rect>
+
+            <!-- Bloque de ilustración 3D desplazado más abajo -->
+            <g transform="translate(36, 110) scale(0.88)">
+                <!-- puntos de red al fondo -->
+                <g fill="#7DB9E6" opacity="0.45">
+                    <circle cx="560" cy="90" r="2.4"></circle>
+                    <circle cx="670" cy="60" r="1.8"></circle>
+                    <circle cx="700" cy="170" r="2.2"></circle>
+                    <circle cx="640" cy="240" r="1.8"></circle>
+                    <circle cx="40" cy="520" r="2.2"></circle>
+                    <circle cx="60" cy="400" r="1.8"></circle>
+                    <circle cx="700" cy="560" r="2"></circle>
+                    <circle cx="520" cy="740" r="2.2"></circle>
+                    <circle cx="300" cy="750" r="1.8"></circle>
+                </g>
+                <g stroke="#7DB9E6" stroke-width="1" opacity="0.16">
+                    <line x1="560" y1="90" x2="670" y2="60"></line>
+                    <line x1="670" y1="60" x2="700" y2="170"></line>
+                    <line x1="700" y1="170" x2="640" y2="240"></line>
+                    <line x1="40" y1="520" x2="60" y2="400"></line>
+                    <line x1="520" y1="740" x2="300" y2="750"></line>
+                </g>
+
+                <!-- el rayo del recorrido -->
+                <line x1="20" y1="701" x2="680" y2="326" stroke="#5BA8DE" stroke-width="14" stroke-linecap="round"
+                    opacity="0.6" filter="url(#glow)"></line>
+                <line x1="20" y1="701" x2="680" y2="326" stroke="#E4F4FE" stroke-width="3" stroke-linecap="round"
+                    opacity="0.95"></line>
+
+                <!-- el rayo se va encendiendo en verde a medida que la luz avanza -->
+                <g fill="none" class="mc-prog">
+                    <path d="M110 650 L590 377" pathLength="1" stroke="#3DDC97" stroke-width="12" opacity="0.55"
+                        filter="url(#glow)"></path>
+                    <path d="M110 650 L590 377" pathLength="1" stroke="#B4F5D6" stroke-width="3.5"></path>
+                </g>
+
+                <!-- resplandor de las estaciones -->
+                <g filter="url(#glow)" opacity="0.42">
+                    <use href="#cubo" x="110" y="600"></use>
+                    <use href="#cubo" x="270" y="509"></use>
+                    <use href="#cubo" x="430" y="418"></use>
+                    <use href="#cubo" x="590" y="327"></use>
+                </g>
+                <g filter="url(#glow)" opacity="0.5">
+                    <use class="mc-g1" href="#cuboA" x="110" y="600"></use>
+                    <use class="mc-g2" href="#cuboA" x="270" y="509"></use>
+                    <use class="mc-g3" href="#cuboA" x="430" y="418"></use>
+                    <use class="mc-g4" href="#cuboA" x="590" y="327"></use>
+                    <use class="mc-r3" href="#cuboR" x="430" y="418"></use>
+                </g>
+
+                <!-- las cuatro estaciones: azules, y se encienden en verde al ser verificadas -->
+                <use href="#cubo" x="110" y="600"></use>
+                <use href="#cubo" x="270" y="509"></use>
+                <use href="#cubo" x="430" y="418"></use>
+                <use href="#cubo" x="590" y="327"></use>
+                <use class="mc-g1" href="#cuboA" x="110" y="600"></use>
+                <use class="mc-g2" href="#cuboA" x="270" y="509"></use>
+                <use class="mc-g3" href="#cuboA" x="430" y="418"></use>
+                <use class="mc-g4" href="#cuboA" x="590" y="327"></use>
+                <use class="mc-r3" href="#cuboR" x="430" y="418"></use>
+
+                <!-- datos en tránsito sobre el rayo -->
+                <g font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" text-anchor="middle"
+                    fill="#CFEBFB">
+                    <rect x="152" y="593" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                        stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="190" y="609">0x7f3a…c91e</text>
+                    <rect x="312" y="502" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                        stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="350" y="518">0x2b9d…04a7</text>
+                    <rect x="472" y="411" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                        stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="510" y="427">0xe41c…77b0</text>
+                </g>
+
+                <!-- sello de verificado sobre el destino -->
+                <g class="mc-sello">
+                    <circle cx="590" cy="290" r="24" fill="none" stroke="#3DDC97" stroke-opacity="0.45"
+                        stroke-width="2"></circle>
+                    <circle cx="590" cy="290" r="17" fill="#3DDC97"></circle>
+                    <path d="M581 290 l6 6 l12 -12" fill="none" stroke="#08141E" stroke-width="4"
+                        stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M650 272 L653 281 L662 284 L653 287 L650 296 L647 287 L638 284 L647 281 Z"
+                        fill="#C9FBE2" opacity="0.85"></path>
+                    <path d="M536 262 L538 268 L544 270 L538 272 L536 278 L534 272 L528 270 L534 268 Z"
+                        fill="#C9FBE2" opacity="0.6"></path>
+                </g>
+
+                <!-- sello de alerta sobre la estación donde se rompe la cadena -->
+                <g class="mc-alerta">
+                    <circle cx="430" cy="381" r="24" fill="none" stroke="#FF5C6C" stroke-opacity="0.5"
+                        stroke-width="2"></circle>
+                    <circle cx="430" cy="381" r="17" fill="#FF5C6C"></circle>
+                    <path d="M430 372 L430 383" fill="none" stroke="#2B0A10" stroke-width="4"
+                        stroke-linecap="round"></path>
+                    <circle cx="430" cy="390" r="2.4" fill="#2B0A10"></circle>
+                </g>
+
+                <!-- la luz que viaja: verde si todo coincide, roja si algo fue alterado -->
+                <g class="mc-orbe">
+                    <g class="mc-orbe-v">
+                        <circle r="26" fill="url(#orbe)"></circle>
+                        <circle r="6" fill="#EFFFF7"></circle>
+                    </g>
+                    <g class="mc-orbe-r">
+                        <circle r="26" fill="url(#orbeR)"></circle>
+                        <circle r="6" fill="#FFF0F1"></circle>
+                    </g>
+                </g>
+
+                <!-- nombres de las estaciones, en vidrio -->
+                <g fill="#FFFFFF" fill-opacity="0.09" stroke="#FFFFFF" stroke-opacity="0.28">
+                    <rect x="46" y="714" width="128" height="32" rx="16"></rect>
+                    <rect x="206" y="623" width="128" height="32" rx="16"></rect>
+                    <rect x="366" y="532" width="128" height="32" rx="16"></rect>
+                    <rect class="mc-pac-rect" x="526" y="441" width="128" height="32" rx="16"></rect>
+                </g>
+                <!-- nombres de las estaciones -->
+                <g font-family="Manrope, system-ui, sans-serif" font-weight="800" font-size="16" fill="#FFFFFF"
+                    text-anchor="middle">
+                    <text x="110" y="735">Laboratorio</text>
+                    <text x="270" y="644">Distribuidora</text>
+                    <text x="430" y="553">Farmacia</text>
+                    <text class="mc-pac-txt" x="590" y="462">Paciente</text>
+                </g>
+                <!-- letrero de alerta -->
+                <g class="mc-alerta-lbl">
+                    <rect x="338" y="574" width="184" height="34" rx="17" fill="#FF5C6C" fill-opacity="0.16"
+                        stroke="#FF5C6C" stroke-opacity="0.75"></rect>
+                    <path d="M361 598 L370 582 L379 598 Z" fill="none" stroke="#FFB4BC" stroke-width="2"
+                        stroke-linejoin="round"></path>
+                    <path d="M370 588 L370 593" stroke="#FFB4BC" stroke-width="2" stroke-linecap="round"></path>
+                    <text x="448" y="596" font-family="Manrope, system-ui, sans-serif" font-weight="800"
+                        font-size="15" fill="#FFB4BC" text-anchor="middle">Cadena alterada</text>
+                </g>
+            </g>
+        </svg>
+
+        <div class="left-content">
+            <div class="left-topbar">
+                <div class="brand-logo">
+                    <svg role="img" aria-label="MediChain" viewBox="0 0 64 64" width="48" height="48"
+                        style="overflow: visible">
+                        <defs>
+                            <linearGradient id="lk1" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#E3F5FF"></stop>
+                                <stop offset="0.42" stop-color="#4FAAEF"></stop>
+                                <stop offset="1" stop-color="#1757A0"></stop>
+                            </linearGradient>
+                            <linearGradient id="lk2" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#DDFFEE"></stop>
+                                <stop offset="0.42" stop-color="#3DDC97"></stop>
+                                <stop offset="1" stop-color="#0B7F55"></stop>
+                            </linearGradient>
+                            <clipPath id="lkc">
+                                <circle cx="32" cy="21.2" r="11"></circle>
+                            </clipPath>
+                            <filter id="lkg" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="4"></feGaussianBlur>
+                            </filter>
+                            <filter id="lks" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur stdDeviation="1.3"></feGaussianBlur>
+                            </filter>
+                            <rect id="lkA" x="5" y="21" width="36" height="22" rx="11" fill="none"></rect>
+                            <rect id="lkB" x="23" y="21" width="36" height="22" rx="11" fill="none"></rect>
+                            <g id="lkAp">
+                                <use href="#lkA" stroke="#061622" stroke-opacity="0.75" stroke-width="8.6"></use>
+                                <use href="#lkA" stroke="url(#lk1)" stroke-width="6"></use>
+                                <use href="#lkA" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.5"
+                                    transform="translate(0 -1.5)"></use>
+                            </g>
+                            <g id="lkBp">
+                                <use href="#lkB" stroke="#061622" stroke-opacity="0.75" stroke-width="8.6"></use>
+                                <use href="#lkB" stroke="url(#lk2)" stroke-width="6"></use>
+                                <use href="#lkB" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.5"
+                                    transform="translate(0 -1.5)"></use>
+                            </g>
+                        </defs>
+                        <g transform="rotate(-35 32 32)">
+                            <g filter="url(#lkg)" opacity="0.3">
+                                <use href="#lkA" stroke="#3F9BE0" stroke-width="6"></use>
+                                <use href="#lkB" stroke="#22C97F" stroke-width="6"></use>
+                            </g>
+                            <g filter="url(#lks)" opacity="0.55" transform="translate(0 1.6)">
+                                <use href="#lkA" stroke="#000000" stroke-width="7"></use>
+                                <use href="#lkB" stroke="#000000" stroke-width="7"></use>
+                            </g>
+                            <use href="#lkAp"></use>
+                            <use href="#lkBp"></use>
+                            <g clip-path="url(#lkc)">
+                                <use href="#lkAp"></use>
+                            </g>
+                        </g>
+                    </svg>
+                    <span class="brand-name">Medi<span class="brand-accent">Chain</span></span>
+                </div>
+
+                <div class="network-status-pill">
+                    <span aria-hidden="true" class="status-dot-glow"></span>
+                    Red Sepolia en línea
+                </div>
+            </div>
+
+            <div class="hero-copy">
+                <h1 class="hero-title">Cada caja, de punta a punta.</h1>
+                <p class="hero-subtitle">Seguí cada medicamento del laboratorio al paciente. Cada paso queda encadenado y anclado en blockchain.</p>
+                <div class="sepolia-badge">
+                    <span aria-hidden="true" class="status-dot"></span>
+                    Anclado en Sepolia, verificable por cualquiera
+                </div>
+            </div>
+        </div>
     </div>
 
-    <mat-card class="login-card">
-      <mat-card-header>
-        <mat-card-title>Seleccionar usuario</mat-card-title>
-        <mat-card-subtitle>Elegí un usuario del seed para simular el ingreso</mat-card-subtitle>
-      </mat-card-header>
-
-      <mat-card-content>
-
-        <!-- Estado de carga -->
-        <div *ngIf="cargando()" class="loading-box">
-          <mat-spinner diameter="36"></mat-spinner>
-          <span>Cargando usuarios del backend...</span>
-        </div>
-
-        <!-- Error general / backend caído -->
-        <div *ngIf="!cargando() && errorGeneral()" class="error-box" role="alert">
-          <mat-icon class="err-icon">error_outline</mat-icon>
-          <div>
-            <p class="err-msg">{{ errorGeneral() }}</p>
-            <p class="err-hint" *ngIf="errorGeneral()?.includes('conectar')">
-              Verificá que el backend Spring Boot esté corriendo en
-              <code>http://localhost:8080</code> con el perfil <code>demo</code>.
-            </p>
-            <button mat-stroked-button color="warn" (click)="cargarUsuarios()" class="retry-btn">
-              <mat-icon>refresh</mat-icon>
-              Reintentar
-            </button>
-          </div>
-        </div>
-
-        <!-- Lista vacía -->
-        <div *ngIf="!cargando() && !errorGeneral() && usuariosActivos().length === 0" class="empty-box">
-          <mat-icon class="empty-icon">group_off</mat-icon>
-          <p>No hay usuarios activos registrados.</p>
-          <p class="empty-hint">
-            Iniciá el backend con el perfil <strong>demo</strong> para cargar el seed de usuarios.
-          </p>
-        </div>
-
-        <!-- Selección principal -->
-        <div *ngIf="!cargando() && !errorGeneral() && usuariosActivos().length > 0" class="form-section">
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Usuario</mat-label>
-            <mat-select id="select-usuario" [ngModel]="usuarioSeleccionado()" (ngModelChange)="onUsuarioChange($event)"
-              [compareWith]="comparar">
-              <mat-select-trigger>
-                {{ usuarioSeleccionado()?.email }}
-              </mat-select-trigger>
-              <mat-option *ngFor="let u of usuariosActivos()" [value]="u">
-                <div class="option-content">
-                  <mat-icon class="opt-icon">{{ getRolIcon(u.rol) }}</mat-icon>
-                  <span class="opt-label">
-                    <strong>{{ u.email }}</strong>
-                    <span class="opt-rol">{{ getRolLabel(u.rol) }}</span>
-                  </span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-hint>Elegí un usuario del seed del backend</mat-hint>
-          </mat-form-field>
-
-          <!-- Tarjeta del usuario seleccionado -->
-          <div *ngIf="usuarioSeleccionado() as sel" class="user-card">
-            <div class="uc-icon-wrap" [attr.data-rol]="sel.rol">
-              <mat-icon>{{ getRolIcon(sel.rol) }}</mat-icon>
-            </div>
-            <div class="uc-info">
-              <span class="uc-email">{{ sel.email }}</span>
-              <span class="uc-rol">{{ getRolLabel(sel.rol) }}</span>
-            </div>
-          </div>
-
-          <!-- Selector de organización (para LABORATORIO, DISTRIBUIDOR, FARMACIA) -->
-          <div *ngIf="necesitaOrganizacion()" class="org-section">
-            <mat-divider></mat-divider>
-
-            <p class="section-label">
-              <mat-icon>business</mat-icon>
-              Seleccionar organización de trabajo
-            </p>
-
-            <div *ngIf="organizacionesFiltradas().length === 0" class="warn-box" role="alert">
-              <mat-icon>warning</mat-icon>
-              <span>
-                No hay organizaciones registradas del tipo
-                <strong>{{ usuarioSeleccionado()?.rol }}</strong>.
-                Pedí a Sede Central que la registre antes de ingresar.
-              </span>
-            </div>
-
-            <mat-form-field *ngIf="organizacionesFiltradas().length > 0" appearance="outline" class="full-width">
-              <mat-label>Organización</mat-label>
-              <mat-select id="select-organizacion" [ngModel]="organizacionSeleccionada()"
-                (ngModelChange)="onOrganizacionChange($event)" [compareWith]="comparar">
-                <mat-option *ngFor="let o of organizacionesFiltradas()" [value]="o">
-                  {{ o.nombre }} ({{ o.cuit }})
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <div *ngIf="errorOrg()" class="error-inline" role="alert">
-              <mat-icon>error</mat-icon>{{ errorOrg() }}
-            </div>
-          </div>
-
-          <!-- Resolución inspector para ANMAT -->
-          <div *ngIf="usuarioSeleccionado()?.rol === 'ANMAT'" class="inspector-section">
-            <mat-divider></mat-divider>
-            <p class="section-label">
-              <mat-icon>verified_user</mat-icon>
-              Perfil de inspector ANMAT
-            </p>
-
-            <div *ngIf="cargandoInspector()" class="loading-inline">
-              <mat-spinner diameter="20"></mat-spinner>
-              <span>Verificando perfil de inspector...</span>
-            </div>
-
-            <div *ngIf="!cargandoInspector() && inspectorResuelto() as insp" class="inspector-card">
-              <mat-icon class="insp-icon" [class.suspendido]="inspectorSuspendido()">
-                {{ inspectorSuspendido() ? 'block' : 'verified' }}
-              </mat-icon>
-              <div>
-                <p class="insp-name">{{ insp.nombreCompleto }}</p>
-                <p class="insp-detail">Legajo: {{ insp.legajoOficial ?? '—' }}</p>
-                <p *ngIf="inspectorSuspendido()" class="insp-warn" role="alert">
-                  ⚠️ Inspector SUSPENDIDO — Solo podrás acceder en modo lectura.
-                </p>
-              </div>
-            </div>
-
-            <div *ngIf="!cargandoInspector() && errorInspector()" class="error-inline" role="alert">
-              <mat-icon>error</mat-icon>{{ errorInspector() }}
-            </div>
-          </div>
-
-        </div><!-- /form-section -->
-      </mat-card-content>
-
-      <mat-card-actions align="end" class="card-actions">
-        <button mat-flat-button color="primary" id="btn-ingresar" [disabled]="!puedeIngresar()" (click)="ingresar()"
-          aria-label="Ingresar al sistema">
-          <mat-icon>login</mat-icon>
-          Ingresar
+    <!-- Panel derecho: ingreso -->
+    <div class="right-panel">
+        <button type="button" class="theme-toggle-btn" (click)="toggleTheme()"
+            [attr.aria-label]="isDarkMode() ? 'Tema de la aplicación: oscuro. Cambiar a claro' : 'Tema de la aplicación: claro. Cambiar a oscuro'"
+            [title]="isDarkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+            @if (!isDarkMode()) {
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"></path>
+                </svg>
+            } @else {
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                </svg>
+            }
         </button>
-      </mat-card-actions>
-    </mat-card>
 
-    <p class="legal-note">
-      Proyecto académico — los datos son ficticios. Sin blockchain distribuida real ni autenticación oficial.
-    </p>
-  </div>
+        <div class="login-card">
+            <div class="login-header">
+                <h2 class="login-title">Ingresar</h2>
+                <p class="login-subtitle">Trazabilidad de medicamentos del laboratorio al paciente.</p>
+            </div>
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+                <label class="login-label">Usuario (Correo electrónico)
+                    <select id="select-usuario" formControlName="email" class="login-input">
+                        <option value="">
+                            {{ cargando() ? 'Cargando usuarios de la base de datos...' : 'Seleccioná un usuario...' }}
+                        </option>
+                        @for (u of usuarios(); track u.id) {
+                            <option [value]="u.email" [disabled]="!u.activo">
+                                {{ u.email }} — {{ getRolLabel(u.rol) }}{{ !u.activo ? ' (Inactivo)' : '' }}
+                            </option>
+                        }
+                    </select>
+                </label>
+                <label class="login-label">Contraseña
+                    <input type="password" formControlName="password" class="login-input"
+                        placeholder="••••••••" autocomplete="current-password">
+                </label>
+                <label class="login-label">Organización
+                    <select id="select-organizacion" formControlName="organizacionId" class="login-input">
+                        <option [ngValue]="null">
+                            {{ necesitaOrganizacion() ? 'Seleccioná una organización...' : 'Sin organización (Sede Central / ANMAT / Paciente)' }}
+                        </option>
+                        @for (o of organizacionesDisponibles(); track o.id) {
+                            <option [ngValue]="o.id">{{ o.nombre }} ({{ o.cuit }})</option>
+                        }
+                    </select>
+                </label>
+                @if (errorLogin()) {
+                    <div class="login-error" role="alert">{{ errorLogin() }}</div>
+                }
+                <button type="submit" class="login-button" [disabled]="enviando()">Ingresar</button>
+            </form>
+        </div>
+    </div>
 </div>
-
-<!-- helper template para ngModel comparator -->
-<ng-template #noOp></ng-template>
