@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { RolUsuario } from '../../core/session/session.service';
 
 export interface UsuarioApi {
@@ -36,14 +37,40 @@ export class LoginApiService {
   private readonly base = '/api';
 
   getUsuarios(): Observable<UsuarioApi[]> {
-    return this.http.get<UsuarioApi[]>(`${this.base}/usuarios`);
+    return this.http.get<UsuarioApi[]>(`${this.base}/usuarios`).pipe(
+      catchError(() =>
+        this.http.get<UsuarioApi[]>('http://localhost:8080/api/usuarios').pipe(
+          catchError(() => this.http.get<UsuarioApi[]>('http://localhost:80/api/usuarios')),
+        ),
+      ),
+    );
   }
 
   getOrganizaciones(): Observable<OrganizacionApi[]> {
-    return this.http.get<OrganizacionApi[]>(`${this.base}/organizaciones`);
+    return this.http.get<OrganizacionApi[]>(`${this.base}/organizaciones`).pipe(
+      catchError(() =>
+        this.http.get<OrganizacionApi[]>('http://localhost:8080/api/organizaciones').pipe(
+          catchError(() =>
+            this.http.get<OrganizacionApi[]>('http://localhost:80/api/organizaciones'),
+          ),
+        ),
+      ),
+    );
   }
 
   getInspectorPorUsuario(usuarioId: number): Observable<InspectorApi> {
-    return this.http.get<InspectorApi>(`${this.base}/inspectores/usuario/${usuarioId}`);
+    return this.http.get<InspectorApi>(`${this.base}/inspectores/usuario/${usuarioId}`).pipe(
+      catchError(() =>
+        this.http
+          .get<InspectorApi>(`http://localhost:8080/api/inspectores/usuario/${usuarioId}`)
+          .pipe(
+            catchError(() =>
+              this.http.get<InspectorApi>(
+                `http://localhost:80/api/inspectores/usuario/${usuarioId}`,
+              ),
+            ),
+          ),
+      ),
+    );
   }
 }

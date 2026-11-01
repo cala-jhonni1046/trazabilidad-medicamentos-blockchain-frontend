@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Pantalla de ingreso con cadena de fondo</title>
+    <script src="./support.js"></script>
+</head>
+
+<body>
+    <x-dc>
+        <helmet>
+            <link rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&amp;display=swap">
+            <style>
+                body {
+                    margin: 0
+                }
+
+                /* Estado base (sin movimiento): cubos azules, Paciente verificado en verde, luz oculta. */
+                .mc-g1,
+                .mc-g2,
+                .mc-g3,
+                .mc-r3,
+                .mc-alerta,
+                .mc-alerta-lbl,
+                .mc-orbe-r {
+                    opacity: 0
+                }
+
+                .mc-g4,
+                .mc-sello {
+                    opacity: 1
+                }
+
+                .mc-orbe {
+                    opacity: 0;
+                    transform: translate(110px, 650px)
+                }
+
+                .mc-sello {
+                    transform-box: view-box;
+                    transform-origin: 590px 290px
+                }
+
+                .mc-alerta {
+                    transform-box: view-box;
+                    transform-origin: 430px 381px
+                }
+
+                .mc-prog {
+                    stroke-dasharray: 1 1;
+                    stroke-dashoffset: 1;
+                    opacity: 0
+                }
+
+                .mc-pac-rect {
+                    fill: #3DDC97;
+                    fill-opacity: .14;
+                    stroke: #3DDC97;
+                    stroke-opacity: .6
+                }
+
+                .mc-pac-txt {
+                    fill: #9AF0C6
+                }
+
+                /* Recorrido de 20 s: 0-10 s todo verificado, 10-20 s la cadena se rompe en Farmacia. */
+                @media (prefers-reduced-motion: no-preference) {
+
+                    .mc-g1,
+                    .mc-g2,
+                    .mc-g3,
+                    .mc-g4,
+                    .mc-r3,
+                    .mc-sello,
+                    .mc-alerta,
+                    .mc-alerta-lbl,
+                    .mc-orbe,
+                    .mc-orbe-v,
+                    .mc-orbe-r,
+                    .mc-prog,
+                    .mc-pac-rect,
+                    .mc-pac-txt {
+                        animation-duration: 20s;
+                        animation-iteration-count: infinite;
+                        animation-timing-function: cubic-bezier(.45, 0, .25, 1)
+                    }
+
+                    .mc-g1 {
+                        animation-name: mcG1
+                    }
+
+                    .mc-g2 {
+                        animation-name: mcG2
+                    }
+
+                    .mc-g3 {
+                        animation-name: mcG3
+                    }
+
+                    .mc-g4 {
+                        animation-name: mcG4
+                    }
+
+                    .mc-r3 {
+                        animation-name: mcR3
+                    }
+
+                    .mc-sello {
+                        animation-name: mcSello
+                    }
+
+                    .mc-alerta {
+                        animation-name: mcAlerta
+                    }
+
+                    .mc-alerta-lbl {
+                        animation-name: mcR3
+                    }
+
+                    .mc-orbe {
+                        animation-name: mcOrbe
+                    }
+
+                    .mc-orbe-v {
+                        animation-name: mcOrbeV
+                    }
+
+                    .mc-orbe-r {
+                        animation-name: mcOrbeR
+                    }
+
+                    .mc-prog {
+                        animation-name: mcProg
+                    }
+
+                    .mc-pac-rect {
+                        animation-name: mcPacRect
+                    }
+
+                    .mc-pac-txt {
+                        animation-name: mcPacTxt
+                    }
+                }
+
+                @keyframes mcG1 {
+                    0% {
+                        opacity: 0
+                    }
+
+                    2.5%,
+                    96% {
+                        opacity: 1
+                    }
+
+                    99%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcG2 {
+
+                    0%,
+                    11.5% {
+                        opacity: 0
+                    }
+
+                    14%,
+                    50% {
+                        opacity: 1
+                    }
+
+                    53%,
+                    65% {
+                        opacity: 0
+                    }
+
+                    67.5%,
+                    96% {
+                        opacity: 1
+                    }
+
+                    99%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcG3 {
+
+                    0%,
+                    24.5% {
+                        opacity: 0
+                    }
+
+                    27.5%,
+                    50% {
+                        opacity: 1
+                    }
+
+                    53%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcG4 {
+
+                    0%,
+                    37.5% {
+                        opacity: 0
+                    }
+
+                    41%,
+                    50% {
+                        opacity: 1
+                    }
+
+                    53%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcR3 {
+
+                    0%,
+                    77.5% {
+                        opacity: 0
+                    }
+
+                    80%,
+                    94% {
+                        opacity: 1
+                    }
+
+                    98%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcSello {
+
+                    0%,
+                    38% {
+                        opacity: 0;
+                        transform: scale(.6)
+                    }
+
+                    41% {
+                        opacity: 1;
+                        transform: scale(1.12)
+                    }
+
+                    43%,
+                    50% {
+                        opacity: 1;
+                        transform: scale(1)
+                    }
+
+                    53%,
+                    100% {
+                        opacity: 0;
+                        transform: scale(.6)
+                    }
+                }
+
+                @keyframes mcAlerta {
+
+                    0%,
+                    78% {
+                        opacity: 0;
+                        transform: scale(.6)
+                    }
+
+                    80.5% {
+                        opacity: 1;
+                        transform: scale(1.12)
+                    }
+
+                    82.5%,
+                    94% {
+                        opacity: 1;
+                        transform: scale(1)
+                    }
+
+                    98%,
+                    100% {
+                        opacity: 0;
+                        transform: scale(.6)
+                    }
+                }
+
+                @keyframes mcOrbe {
+                    0% {
+                        transform: translate(110px, 650px);
+                        opacity: 0
+                    }
+
+                    2.5%,
+                    3% {
+                        transform: translate(110px, 650px);
+                        opacity: 1
+                    }
+
+                    12%,
+                    16% {
+                        transform: translate(270px, 559px);
+                        opacity: 1
+                    }
+
+                    25%,
+                    29% {
+                        transform: translate(430px, 468px);
+                        opacity: 1
+                    }
+
+                    38%,
+                    50% {
+                        transform: translate(590px, 377px);
+                        opacity: 1
+                    }
+
+                    51% {
+                        transform: translate(590px, 377px);
+                        opacity: 0
+                    }
+
+                    51.01% {
+                        transform: translate(110px, 650px);
+                        opacity: 0
+                    }
+
+                    53%,
+                    56% {
+                        transform: translate(110px, 650px);
+                        opacity: 1
+                    }
+
+                    65%,
+                    69% {
+                        transform: translate(270px, 559px);
+                        opacity: 1
+                    }
+
+                    78%,
+                    94% {
+                        transform: translate(430px, 468px);
+                        opacity: 1
+                    }
+
+                    97% {
+                        transform: translate(430px, 468px);
+                        opacity: 0
+                    }
+
+                    97.01%,
+                    100% {
+                        transform: translate(110px, 650px);
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcOrbeV {
+
+                    0%,
+                    77.5% {
+                        opacity: 1
+                    }
+
+                    80%,
+                    97.5% {
+                        opacity: 0
+                    }
+
+                    98%,
+                    100% {
+                        opacity: 1
+                    }
+                }
+
+                @keyframes mcOrbeR {
+
+                    0%,
+                    77.5% {
+                        opacity: 0
+                    }
+
+                    80%,
+                    97.5% {
+                        opacity: 1
+                    }
+
+                    98%,
+                    100% {
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcProg {
+
+                    0%,
+                    3% {
+                        stroke-dashoffset: 1;
+                        opacity: 1
+                    }
+
+                    12%,
+                    16% {
+                        stroke-dashoffset: .667;
+                        opacity: 1
+                    }
+
+                    25%,
+                    29% {
+                        stroke-dashoffset: .333;
+                        opacity: 1
+                    }
+
+                    38%,
+                    50% {
+                        stroke-dashoffset: 0;
+                        opacity: 1
+                    }
+
+                    52% {
+                        stroke-dashoffset: 0;
+                        opacity: 0
+                    }
+
+                    52.01% {
+                        stroke-dashoffset: 1;
+                        opacity: 0
+                    }
+
+                    53%,
+                    56% {
+                        stroke-dashoffset: 1;
+                        opacity: 1
+                    }
+
+                    65%,
+                    69% {
+                        stroke-dashoffset: .667;
+                        opacity: 1
+                    }
+
+                    78%,
+                    94% {
+                        stroke-dashoffset: .333;
+                        opacity: 1
+                    }
+
+                    98% {
+                        stroke-dashoffset: .333;
+                        opacity: 0
+                    }
+
+                    98.01%,
+                    100% {
+                        stroke-dashoffset: 1;
+                        opacity: 0
+                    }
+                }
+
+                @keyframes mcPacRect {
+
+                    0%,
+                    37.5% {
+                        fill: #FFFFFF;
+                        fill-opacity: .09;
+                        stroke: #FFFFFF;
+                        stroke-opacity: .28
+                    }
+
+                    41%,
+                    50% {
+                        fill: #3DDC97;
+                        fill-opacity: .14;
+                        stroke: #3DDC97;
+                        stroke-opacity: .6
+                    }
+
+                    53%,
+                    100% {
+                        fill: #FFFFFF;
+                        fill-opacity: .09;
+                        stroke: #FFFFFF;
+                        stroke-opacity: .28
+                    }
+                }
+
+                @keyframes mcPacTxt {
+
+                    0%,
+                    37.5% {
+                        fill: #FFFFFF
+                    }
+
+                    41%,
+                    50% {
+                        fill: #9AF0C6
+                    }
+
+                    53%,
+                    100% {
+                        fill: #FFFFFF
+                    }
+                }
+            </style>
+        </helmet>
+        <div
+            style="width: 1280px; height: 780px; display: flex; font-family: 'Manrope', system-ui, sans-serif; background: #F4F7F6; color: #15232B">
+
+            <!-- Panel izquierdo: el recorrido de la caja -->
+
+
+            <!-- Panel derecho: ingreso -->
+            <div
+                style="position: relative; flex: 1.15 1 0; min-width: 0; overflow: hidden; background: radial-gradient(110% 80% at 80% 88%, #1C5F94 0%, #0F2A40 46%, #08141E 100%)">
+                <svg aria-hidden="true" viewBox="0 0 740 780" width="740" height="780"
+                    style="position: absolute; left: 0; top: 0">
+                    <defs>
+                        <linearGradient id="gT" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#9BD6F8"></stop>
+                            <stop offset="1" stop-color="#3A8CC8"></stop>
+                        </linearGradient>
+                        <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#2F86C2"></stop>
+                            <stop offset="1" stop-color="#123F63"></stop>
+                        </linearGradient>
+                        <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#124773"></stop>
+                            <stop offset="1" stop-color="#08213A"></stop>
+                        </linearGradient>
+                        <linearGradient id="aT" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#C9FBE2"></stop>
+                            <stop offset="1" stop-color="#34D399"></stop>
+                        </linearGradient>
+                        <linearGradient id="aL" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#22C07F"></stop>
+                            <stop offset="1" stop-color="#0B6B49"></stop>
+                        </linearGradient>
+                        <linearGradient id="aR" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#12905F"></stop>
+                            <stop offset="1" stop-color="#064632"></stop>
+                        </linearGradient>
+                        <radialGradient id="orbe">
+                            <stop offset="0" stop-color="#E9FFF4"></stop>
+                            <stop offset="0.35" stop-color="#3DDC97"></stop>
+                            <stop offset="1" stop-color="#3DDC97" stop-opacity="0"></stop>
+                        </radialGradient>
+                        <linearGradient id="rT" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#FFD3D8"></stop>
+                            <stop offset="1" stop-color="#FF5C6C"></stop>
+                        </linearGradient>
+                        <linearGradient id="rL" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#F0475C"></stop>
+                            <stop offset="1" stop-color="#8A1626"></stop>
+                        </linearGradient>
+                        <linearGradient id="rR" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#C42C42"></stop>
+                            <stop offset="1" stop-color="#560A18"></stop>
+                        </linearGradient>
+                        <radialGradient id="orbeR">
+                            <stop offset="0" stop-color="#FFF0F1"></stop>
+                            <stop offset="0.35" stop-color="#FF5C6C"></stop>
+                            <stop offset="1" stop-color="#FF5C6C" stop-opacity="0"></stop>
+                        </radialGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="8"></feGaussianBlur>
+                        </filter>
+
+                        <g id="cubo">
+                            <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                            <polygon points="0,0 44,25 0,50 -44,25" fill="url(#gT)" stroke="#D6EEFC"
+                                stroke-opacity="0.8" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF"
+                                stroke-opacity="0.65" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                            <circle cx="0" cy="25" r="3" fill="#FFFFFF" fill-opacity="0.95"></circle>
+                            <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#gL)" stroke="#D6EEFC"
+                                stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,50 44,25 44,75 0,100" fill="url(#gR)" stroke="#D6EEFC"
+                                stroke-opacity="0.4" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                                stroke-width="1.6"></line>
+                            <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                            <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                                <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.6"></rect>
+                                <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.42"></rect>
+                                <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.34"></rect>
+                            </g>
+                            <g transform="matrix(44 -25 0 50 0 50)" fill="#FFFFFF">
+                                <rect x="0.16" y="0.2" width="0.6" height="0.06" opacity="0.3"></rect>
+                                <rect x="0.16" y="0.4" width="0.42" height="0.06" opacity="0.22"></rect>
+                            </g>
+                        </g>
+
+                        <g id="cuboA">
+                            <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                            <polygon points="0,0 44,25 0,50 -44,25" fill="url(#aT)" stroke="#E3FFF1"
+                                stroke-opacity="0.9" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.22" stroke="#FFFFFF"
+                                stroke-opacity="0.8" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                            <path d="M-9 25 l6 6 l12 -12" fill="none" stroke="#064632" stroke-width="3.4"
+                                stroke-linecap="round" stroke-linejoin="round"></path>
+                            <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#aL)" stroke="#E3FFF1"
+                                stroke-opacity="0.6" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,50 44,25 44,75 0,100" fill="url(#aR)" stroke="#E3FFF1"
+                                stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                                stroke-width="1.6"></line>
+                            <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                            <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                                <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.7"></rect>
+                                <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.5"></rect>
+                                <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.4"></rect>
+                            </g>
+                        </g>
+
+                        <g id="cuboR">
+                            <ellipse cx="0" cy="100" rx="62" ry="16" fill="#000000" opacity="0.3"></ellipse>
+                            <polygon points="0,0 44,25 0,50 -44,25" fill="url(#rT)" stroke="#FFE9EB"
+                                stroke-opacity="0.9" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,12 24,25 0,38 -24,25" fill="#FFFFFF" fill-opacity="0.22" stroke="#FFFFFF"
+                                stroke-opacity="0.8" stroke-width="1.2" stroke-linejoin="round"></polygon>
+                            <path d="M0 18 L0 27" fill="none" stroke="#4A0A14" stroke-width="3.4"
+                                stroke-linecap="round"></path>
+                            <circle cx="0" cy="32" r="2" fill="#4A0A14"></circle>
+                            <polygon points="-44,25 0,50 0,100 -44,75" fill="url(#rL)" stroke="#FFE9EB"
+                                stroke-opacity="0.6" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <polygon points="0,50 44,25 44,75 0,100" fill="url(#rR)" stroke="#FFE9EB"
+                                stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            <path d="M-44 25 L0 0 L44 25" fill="none" stroke="#FFFFFF" stroke-opacity="0.95"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <line x1="0" y1="50" x2="0" y2="100" stroke="#FFFFFF" stroke-opacity="0.6"
+                                stroke-width="1.6"></line>
+                            <circle cx="-44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="44" cy="25" r="2.2" fill="#FFFFFF"></circle>
+                            <circle cx="0" cy="100" r="2.2" fill="#FFFFFF" fill-opacity="0.8"></circle>
+                            <g transform="matrix(44 25 0 50 -44 25)" fill="#FFFFFF">
+                                <rect x="0.16" y="0.2" width="0.52" height="0.06" opacity="0.7"></rect>
+                                <rect x="0.16" y="0.4" width="0.68" height="0.06" opacity="0.5"></rect>
+                                <rect x="0.16" y="0.6" width="0.38" height="0.06" opacity="0.4"></rect>
+                            </g>
+                        </g>
+                        <pattern id="iso" width="88" height="50" patternUnits="userSpaceOnUse">
+                            <path d="M0 25 L44 0 L88 25 L44 50 Z" fill="none" stroke="#7DB9E6" stroke-opacity="0.4"
+                                stroke-width="1"></path>
+                        </pattern>
+                        <radialGradient id="fadeM" cx="0.55" cy="0.62" r="0.6">
+                            <stop offset="0" stop-color="#FFFFFF"></stop>
+                            <stop offset="1" stop-color="#000000"></stop>
+                        </radialGradient>
+                        <mask id="mfloor" maskUnits="userSpaceOnUse" x="0" y="0" width="740" height="780">
+                            <rect width="740" height="780" fill="url(#fadeM)"></rect>
+                        </mask>
+                    </defs>
+
+                    <!-- suelo isométrico -->
+                    <rect x="0" y="0" width="740" height="780" fill="url(#iso)" mask="url(#mfloor)"></rect>
+
+                    <!-- puntos de red al fondo -->
+                    <g fill="#7DB9E6" opacity="0.45">
+                        <circle cx="560" cy="90" r="2.4"></circle>
+                        <circle cx="670" cy="60" r="1.8"></circle>
+                        <circle cx="700" cy="170" r="2.2"></circle>
+                        <circle cx="640" cy="240" r="1.8"></circle>
+                        <circle cx="40" cy="520" r="2.2"></circle>
+                        <circle cx="60" cy="400" r="1.8"></circle>
+                        <circle cx="700" cy="560" r="2"></circle>
+                        <circle cx="520" cy="740" r="2.2"></circle>
+                        <circle cx="300" cy="750" r="1.8"></circle>
+                    </g>
+                    <g stroke="#7DB9E6" stroke-width="1" opacity="0.16">
+                        <line x1="560" y1="90" x2="670" y2="60"></line>
+                        <line x1="670" y1="60" x2="700" y2="170"></line>
+                        <line x1="700" y1="170" x2="640" y2="240"></line>
+                        <line x1="40" y1="520" x2="60" y2="400"></line>
+                        <line x1="520" y1="740" x2="300" y2="750"></line>
+                    </g>
+
+                    <!-- el rayo del recorrido -->
+                    <line x1="20" y1="701" x2="680" y2="326" stroke="#5BA8DE" stroke-width="14" stroke-linecap="round"
+                        opacity="0.6" filter="url(#glow)"></line>
+                    <line x1="20" y1="701" x2="680" y2="326" stroke="#E4F4FE" stroke-width="3" stroke-linecap="round"
+                        opacity="0.95"></line>
+
+                    <!-- el rayo se va encendiendo en verde a medida que la luz avanza -->
+                    <g fill="none" class="mc-prog">
+                        <path d="M110 650 L590 377" pathLength="1" stroke="#3DDC97" stroke-width="12" opacity="0.55"
+                            filter="url(#glow)"></path>
+                        <path d="M110 650 L590 377" pathLength="1" stroke="#B4F5D6" stroke-width="3.5"></path>
+                    </g>
+
+                    <!-- resplandor de las estaciones -->
+                    <g filter="url(#glow)" opacity="0.42">
+                        <use href="#cubo" x="110" y="600"></use>
+                        <use href="#cubo" x="270" y="509"></use>
+                        <use href="#cubo" x="430" y="418"></use>
+                        <use href="#cubo" x="590" y="327"></use>
+                    </g>
+                    <g filter="url(#glow)" opacity="0.5">
+                        <use class="mc-g1" href="#cuboA" x="110" y="600"></use>
+                        <use class="mc-g2" href="#cuboA" x="270" y="509"></use>
+                        <use class="mc-g3" href="#cuboA" x="430" y="418"></use>
+                        <use class="mc-g4" href="#cuboA" x="590" y="327"></use>
+                        <use class="mc-r3" href="#cuboR" x="430" y="418"></use>
+                    </g>
+
+                    <!-- las cuatro estaciones: azules, y se encienden en verde al ser verificadas -->
+                    <use href="#cubo" x="110" y="600"></use>
+                    <use href="#cubo" x="270" y="509"></use>
+                    <use href="#cubo" x="430" y="418"></use>
+                    <use href="#cubo" x="590" y="327"></use>
+                    <use class="mc-g1" href="#cuboA" x="110" y="600"></use>
+                    <use class="mc-g2" href="#cuboA" x="270" y="509"></use>
+                    <use class="mc-g3" href="#cuboA" x="430" y="418"></use>
+                    <use class="mc-g4" href="#cuboA" x="590" y="327"></use>
+                    <use class="mc-r3" href="#cuboR" x="430" y="418"></use>
+
+                    <!-- datos en tránsito sobre el rayo -->
+                    <g font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" text-anchor="middle"
+                        fill="#CFEBFB">
+                        <rect x="152" y="593" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                            stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="190" y="609">0x7f3a…c91e</text>
+                        <rect x="312" y="502" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                            stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="350" y="518">0x2b9d…04a7</text>
+                        <rect x="472" y="411" width="76" height="24" rx="12" fill="#0B1B28" fill-opacity="0.88"
+                            stroke="#7DB9E6" stroke-opacity="0.6"></rect><text x="510" y="427">0xe41c…77b0</text>
+                    </g>
+
+                    <!-- sello de verificado sobre el destino -->
+                    <g class="mc-sello">
+                        <circle cx="590" cy="290" r="24" fill="none" stroke="#3DDC97" stroke-opacity="0.45"
+                            stroke-width="2"></circle>
+                        <circle cx="590" cy="290" r="17" fill="#3DDC97"></circle>
+                        <path d="M581 290 l6 6 l12 -12" fill="none" stroke="#08141E" stroke-width="4"
+                            stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M650 272 L653 281 L662 284 L653 287 L650 296 L647 287 L638 284 L647 281 Z"
+                            fill="#C9FBE2" opacity="0.85"></path>
+                        <path d="M536 262 L538 268 L544 270 L538 272 L536 278 L534 272 L528 270 L534 268 Z"
+                            fill="#C9FBE2" opacity="0.6"></path>
+                    </g>
+
+                    <!-- sello de alerta sobre la estación donde se rompe la cadena -->
+                    <g class="mc-alerta">
+                        <circle cx="430" cy="381" r="24" fill="none" stroke="#FF5C6C" stroke-opacity="0.5"
+                            stroke-width="2"></circle>
+                        <circle cx="430" cy="381" r="17" fill="#FF5C6C"></circle>
+                        <path d="M430 372 L430 383" fill="none" stroke="#2B0A10" stroke-width="4"
+                            stroke-linecap="round"></path>
+                        <circle cx="430" cy="390" r="2.4" fill="#2B0A10"></circle>
+                    </g>
+
+                    <!-- la luz que viaja: verde si todo coincide, roja si algo fue alterado -->
+                    <g class="mc-orbe">
+                        <g class="mc-orbe-v">
+                            <circle r="26" fill="url(#orbe)"></circle>
+                            <circle r="6" fill="#EFFFF7"></circle>
+                        </g>
+                        <g class="mc-orbe-r">
+                            <circle r="26" fill="url(#orbeR)"></circle>
+                            <circle r="6" fill="#FFF0F1"></circle>
+                        </g>
+                    </g>
+
+                    <!-- nombres de las estaciones, en vidrio -->
+                    <g fill="#FFFFFF" fill-opacity="0.09" stroke="#FFFFFF" stroke-opacity="0.28">
+                        <rect x="46" y="714" width="128" height="32" rx="16"></rect>
+                        <rect x="206" y="623" width="128" height="32" rx="16"></rect>
+                        <rect x="366" y="532" width="128" height="32" rx="16"></rect>
+                        <rect class="mc-pac-rect" x="526" y="441" width="128" height="32" rx="16"></rect>
+                    </g>
+                    <!-- nombres de las estaciones -->
+                    <g font-family="Manrope, system-ui, sans-serif" font-weight="800" font-size="16" fill="#FFFFFF"
+                        text-anchor="middle">
+                        <text x="110" y="735">Laboratorio</text>
+                        <text x="270" y="644">Distribuidora</text>
+                        <text x="430" y="553">Farmacia</text>
+                        <text class="mc-pac-txt" x="590" y="462">Paciente</text>
+                    </g>
+                    <!-- letrero de alerta -->
+                    <g class="mc-alerta-lbl">
+                        <rect x="338" y="574" width="184" height="34" rx="17" fill="#FF5C6C" fill-opacity="0.16"
+                            stroke="#FF5C6C" stroke-opacity="0.75"></rect>
+                        <path d="M361 598 L370 582 L379 598 Z" fill="none" stroke="#FFB4BC" stroke-width="2"
+                            stroke-linejoin="round"></path>
+                        <path d="M370 588 L370 593" stroke="#FFB4BC" stroke-width="2" stroke-linecap="round"></path>
+                        <text x="448" y="596" font-family="Manrope, system-ui, sans-serif" font-weight="800"
+                            font-size="15" fill="#FFB4BC" text-anchor="middle">Cadena alterada</text>
+                    </g>
+                </svg>
+
+                <div
+                    style="position: relative; height: 100%; box-sizing: border-box; padding: 52px 64px; display: flex; flex-direction: column">
+                    <div style="display: flex; align-items: center; gap: 12px">
+                        <svg role="img" aria-label="MediChain" viewBox="0 0 64 64" width="58" height="58"
+                            style="overflow: visible">
+                            <defs>
+                                <linearGradient id="lk1" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#E3F5FF"></stop>
+                                    <stop offset="0.42" stop-color="#4FAAEF"></stop>
+                                    <stop offset="1" stop-color="#1757A0"></stop>
+                                </linearGradient>
+                                <linearGradient id="lk2" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#DDFFEE"></stop>
+                                    <stop offset="0.42" stop-color="#3DDC97"></stop>
+                                    <stop offset="1" stop-color="#0B7F55"></stop>
+                                </linearGradient>
+                                <clipPath id="lkc">
+                                    <circle cx="32" cy="21.2" r="11"></circle>
+                                </clipPath>
+                                <filter id="lkg" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="4"></feGaussianBlur>
+                                </filter>
+                                <filter id="lks" x="-30%" y="-30%" width="160%" height="160%">
+                                    <feGaussianBlur stdDeviation="1.3"></feGaussianBlur>
+                                </filter>
+                                <rect id="lkA" x="5" y="21" width="36" height="22" rx="11" fill="none"></rect>
+                                <rect id="lkB" x="23" y="21" width="36" height="22" rx="11" fill="none"></rect>
+                                <g id="lkAp">
+                                    <use href="#lkA" stroke="#061622" stroke-opacity="0.75" stroke-width="8.6"></use>
+                                    <use href="#lkA" stroke="url(#lk1)" stroke-width="6"></use>
+                                    <use href="#lkA" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.5"
+                                        transform="translate(0 -1.5)"></use>
+                                </g>
+                                <g id="lkBp">
+                                    <use href="#lkB" stroke="#061622" stroke-opacity="0.75" stroke-width="8.6"></use>
+                                    <use href="#lkB" stroke="url(#lk2)" stroke-width="6"></use>
+                                    <use href="#lkB" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.5"
+                                        transform="translate(0 -1.5)"></use>
+                                </g>
+                            </defs>
+                            <g transform="rotate(-35 32 32)">
+                                <g filter="url(#lkg)" opacity="0.3">
+                                    <use href="#lkA" stroke="#3F9BE0" stroke-width="6"></use>
+                                    <use href="#lkB" stroke="#22C97F" stroke-width="6"></use>
+                                </g>
+                                <g filter="url(#lks)" opacity="0.55" transform="translate(0 1.6)">
+                                    <use href="#lkA" stroke="#000000" stroke-width="7"></use>
+                                    <use href="#lkB" stroke="#000000" stroke-width="7"></use>
+                                </g>
+                                <use href="#lkAp"></use>
+                                <use href="#lkBp"></use>
+                                <g clip-path="url(#lkc)">
+                                    <use href="#lkAp"></use>
+                                </g>
+                            </g>
+                        </svg>
+                        <span style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #FFFFFF">Medi<span
+                                style="color: #7CC0F2">Chain</span></span>
+                    </div>
+
+                    <div style="margin-top: 52px; max-width: 430px; display: flex; flex-direction: column; gap: 18px">
+                        <h1
+                            style="margin: 0; font-size: 58px; font-weight: 800; line-height: 1.02; letter-spacing: -1.8px; color: #FFFFFF; background: linear-gradient(180deg, #FFFFFF 45%, #A9D6F5 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent">
+                            Cada caja, de punta a punta.</h1>
+                        <p style="margin: 0; font-size: 18px; font-weight: 500; line-height: 1.5; color: #D3E0E6">Seguí
+                            cada medicamento del laboratorio al paciente. Cada paso queda encadenado y anclado en
+                            blockchain.</p>
+                    </div>
+                    <div
+                        style="margin-top: 26px; align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: rgba(61,220,151,0.12); border: 1px solid rgba(61,220,151,0.45); color: #B4F5D6; font-size: 14px; font-weight: 700">
+                        <span aria-hidden="true"
+                            style="width: 8px; height: 8px; border-radius: 50%; background: #3DDC97"></span>Anclado en
+                        Sepolia, verificable por cualquiera</div>
+                    <div
+                        style="position: absolute; top: 62px; right: 44px; display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); color: #BCD0DC; font-size: 13px; font-weight: 700">
+                        <span aria-hidden="true"
+                            style="width: 8px; height: 8px; border-radius: 50%; background: #3DDC97; box-shadow: 0 0 0 4px rgba(61,220,151,0.2)"></span>Red
+                        Sepolia en línea</div>
+                </div>
+            </div>
+            <div
+                style="position: relative; flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 40px; background: radial-gradient(70% 55% at 100% 0%, #DCEBF6 0%, #F4F7F6 70%)">
+                <button type="button" aria-label="Tema de la aplicación: claro. Cambiar a oscuro"
+                    style="position: absolute; top: 24px; right: 28px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #D5DEDC; background: #FFFFFF; color: #15232B; display: flex; align-items: center; justify-content: center; cursor: pointer">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"></path>
+                    </svg>
+                </button>
+                <div
+                    style="width: 400px; display: flex; flex-direction: column; gap: 22px; background: #FFFFFF; border: 1px solid #DCE5E8; border-radius: 22px; padding: 38px; box-shadow: 0 28px 60px -28px rgba(16,32,42,0.32)">
+                    <div>
+                        <h2 style="margin: 0 0 6px; font-size: 32px; font-weight: 800; letter-spacing: -0.5px">Ingresar
+                        </h2>
+                        <p style="margin: 0; font-size: 16px; font-weight: 500; color: #56666E">Trazabilidad de
+                            medicamentos del laboratorio al paciente.</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px">
+                        <label
+                            style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700">Correo
+                            electrónico
+                            <input type="email" value=""
+                                style="height: 48px; box-sizing: border-box; border: 1px solid #9AABB2; border-radius: 10px; padding: 0 14px; font-size: 16px; font-family: inherit">
+                        </label>
+                        <label
+                            style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700">Contraseña
+                            <input type="password" value=""
+                                style="height: 48px; box-sizing: border-box; border: 1px solid #9AABB2; border-radius: 10px; padding: 0 14px; font-size: 16px; font-family: inherit">
+                        </label>
+                        <button type="button"
+                            style="height: 50px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2A8AD0 0%, #1F6FA8 100%); box-shadow: 0 12px 26px -10px rgba(31,111,168,0.7); color: #FFFFFF; font-size: 17px; font-weight: 800; font-family: inherit; cursor: pointer">Ingresar</button>
+                    </div>
+                    <div
+                        style="display: flex; flex-direction: column; gap: 10px; font-size: 15px; font-weight: 500; color: #56666E">
+                        <span>¿Querés saber si un medicamento es original? <a href="#"
+                                style="color: #1F6FA8; font-weight: 700">Verificalo sin ingresar</a></span>
+                        <span>¿Todavía no tenés cuenta? <a href="#" style="color: #1F6FA8; font-weight: 700">Registrá tu
+                                empresa</a> o <a href="#" style="color: #1F6FA8; font-weight: 700">creá tu cuenta de
+                                paciente</a></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </x-dc>
+    <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+
+</html>
