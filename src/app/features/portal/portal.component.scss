@@ -5,25 +5,6 @@
   flex-direction: column;
 }
 
-.demo-ribbon {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 24px;
-  background: rgba(251, 191, 36, 0.18);
-  border-bottom: 1px solid rgba(251, 191, 36, 0.35);
-  color: #92400e;
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-.ribbon-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
 .portal-header {
   display: flex;
   justify-content: space-between;
