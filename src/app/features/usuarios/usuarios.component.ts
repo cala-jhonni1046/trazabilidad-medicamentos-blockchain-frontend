@@ -31,8 +31,19 @@ import { LoadingOverlayComponent } from '../../shared/components/loading-overlay
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { FechaArPipe } from '../../shared/pipes/fecha-ar.pipe';
+import { OrganizacionesApiService } from '../organizaciones/organizaciones-api.service';
+import { OrganizacionDto } from '../organizaciones/organizaciones.models';
+import { EditarAccesoDialogComponent } from './editar-acceso-dialog.component';
 import { UsuariosApiService } from './usuarios-api.service';
-import { ROL_LABELS, ROLES_CREABLES, TODOS_LOS_ROLES, UsuarioDto } from './usuarios.models';
+import {
+  PASSWORD_MIN,
+  ROL_LABELS,
+  ROLES_CON_ORGANIZACION,
+  ROLES_CREABLES,
+  TODOS_LOS_ROLES,
+  UsuarioDto,
+  UsuarioRequest,
+} from './usuarios.models';
 
 @Component({
   selector: 'app-usuarios',
@@ -59,6 +70,7 @@ import { ROL_LABELS, ROLES_CREABLES, TODOS_LOS_ROLES, UsuarioDto } from './usuar
 })
 export class UsuariosComponent implements OnInit {
   private readonly api = inject(UsuariosApiService);
+  private readonly organizacionesApi = inject(OrganizacionesApiService);
   private readonly session = inject(SessionService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
@@ -68,7 +80,8 @@ export class UsuariosComponent implements OnInit {
 
   readonly rolesCreables = ROLES_CREABLES;
   readonly rolesFiltro = TODOS_LOS_ROLES;
-  readonly columnas = ['email', 'rol', 'estado', 'fecha', 'acciones'];
+  readonly columnas = ['email', 'rol', 'organizacion', 'estado', 'fecha', 'acciones'];
+  readonly passwordMin = PASSWORD_MIN;
 
   readonly usuarios = signal<UsuarioDto[]>([]);
   readonly cargando = signal(false);
@@ -80,6 +93,9 @@ export class UsuariosComponent implements OnInit {
   /** Último usuario ANMAT creado, para ofrecer el alta de su perfil de inspector. */
   readonly ultimoAnmat = signal<UsuarioDto | null>(null);
 
+  readonly organizaciones = signal<OrganizacionDto[]>([]);
+  readonly errorOrganizaciones = signal<string | null>(null);
+  readonly verPassword = signal(false);
   readonly filtroRol = signal<RolUsuario | ''>('');
   readonly busqueda = signal('');
 
@@ -97,10 +113,61 @@ export class UsuariosComponent implements OnInit {
       validators: [Validators.required, Validators.email, Validators.maxLength(180)],
     }),
     rol: new FormControl<RolUsuario | null>(null, [Validators.required]),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(PASSWORD_MIN)],
+    }),
+    organizacionId: new FormControl<number | null>(null),
   });
 
+  /** Rol elegido en el formulario (reactivo, para mostrar u ocultar la organización). */
+  private readonly rolElegido = signal<RolUsuario | null>(null);
+
+  readonly necesitaOrganizacion = computed(() => {
+    const rol = this.rolElegido();
+    return !!rol && ROLES_CON_ORGANIZACION.includes(rol);
+  });
+
+  /** Solo organizaciones del mismo tipo que el rol (un LABORATORIO no se asocia a una farmacia). */
+  readonly organizacionesDisponibles = computed(() => {
+    const rol = this.rolElegido();
+    return rol ? this.organizaciones().filter((o) => o.tipo === rol) : [];
+  });
+
+  private readonly nombresOrganizacion = computed(
+    () => new Map(this.organizaciones().map((o) => [o.id, o.nombre])),
+  );
+
   ngOnInit(): void {
+    this.form.controls.rol.valueChanges.subscribe((rol) => this.alCambiarRol(rol));
     this.cargar();
+    this.cargarOrganizaciones();
+  }
+
+  private alCambiarRol(rol: RolUsuario | null): void {
+    this.rolElegido.set(rol);
+    const org = this.form.controls.organizacionId;
+    org.setValue(null);
+    if (rol && ROLES_CON_ORGANIZACION.includes(rol)) {
+      org.setValidators([Validators.required]);
+    } else {
+      org.clearValidators();
+    }
+    org.updateValueAndValidity({ emitEvent: false });
+  }
+
+  nombreOrganizacion(u: UsuarioDto): string {
+    return u.organizacionId != null ? (this.nombresOrganizacion().get(u.organizacionId) ?? `#${u.organizacionId}`) : '—';
+  }
+
+  private cargarOrganizaciones(): void {
+    this.organizacionesApi.listar().subscribe({
+      next: (lista) => {
+        this.organizaciones.set(lista);
+        this.errorOrganizaciones.set(null);
+      },
+      error: (err) => this.errorOrganizaciones.set(mensajeApi(err)),
+    });
   }
 
   onBusqueda(event: Event): void {
@@ -131,17 +198,23 @@ export class UsuariosComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const { email, rol } = this.form.getRawValue();
+    const { email, rol, password, organizacionId } = this.form.getRawValue();
     this.enviando.set(true);
     this.errorForm.set(null);
     this.ultimoAnmat.set(null);
 
-    this.api.crear({ email: email.trim(), rol: rol as RolUsuario, activo: true }).subscribe({
+    const body: UsuarioRequest = { email: email.trim(), rol: rol as RolUsuario, activo: true, password };
+    if (ROLES_CON_ORGANIZACION.includes(rol as RolUsuario) && organizacionId != null) {
+      body.organizacionId = organizacionId;
+    }
+
+    this.api.crear(body).subscribe({
       next: (creado) => {
         this.enviando.set(false);
         this.usuarios.update((lista) => [...lista, creado]);
         // resetForm limpia también el estado 'enviado', para que no queden errores en rojo.
-        this.formDir?.resetForm({ email: '', rol: null });
+        this.formDir?.resetForm({ email: '', rol: null, password: '', organizacionId: null });
+        this.verPassword.set(false);
         if (creado.rol === 'ANMAT') {
           this.ultimoAnmat.set(creado);
         }
@@ -197,6 +270,18 @@ export class UsuariosComponent implements OnInit {
             this.manejarErrorDeAccion(err);
           },
         });
+      });
+  }
+
+  /** Abre "Editar acceso" para fijar una contraseña nueva. */
+  editarAcceso(u: UsuarioDto): void {
+    this.dialog
+      .open(EditarAccesoDialogComponent, { data: u, autoFocus: 'input' })
+      .afterClosed()
+      .subscribe((guardado) => {
+        if (guardado === true) {
+          this.snack.open(`Contraseña de ${u.email} actualizada.`, 'Cerrar', { duration: 4000 });
+        }
       });
   }
 

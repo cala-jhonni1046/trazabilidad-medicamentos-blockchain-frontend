@@ -20,6 +20,13 @@ export class UsuariosApiService {
     return this.http.put<UsuarioDto>(`${this.base}/${id}`, body);
   }
 
+  /** Restablece la contraseña. El backend exige el rol, así que se reenvían email, rol y organización. */
+  cambiarPassword(u: UsuarioDto, password: string): Observable<UsuarioDto> {
+    const body: UsuarioRequest = { email: u.email, rol: u.rol, password };
+    if (u.organizacionId != null) body.organizacionId = u.organizacionId;
+    return this.http.put<UsuarioDto>(`${this.base}/${u.id}`, body);
+  }
+
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
