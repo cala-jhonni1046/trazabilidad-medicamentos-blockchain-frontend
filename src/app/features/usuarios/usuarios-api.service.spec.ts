@@ -40,4 +40,30 @@ describe('UsuariosApiService', () => {
     api.eliminar(5).subscribe();
     expect(http.expectOne('/api/usuarios/5').request.method).toBe('DELETE');
   });
+
+  it('cambia la contraseña con PUT reenviando email, rol y organización', () => {
+    api
+      .cambiarPassword(
+        { id: 7, email: 'lab@medichain.demo', rol: 'LABORATORIO', activo: true, organizacionId: 10 },
+        'NuevaClave1',
+      )
+      .subscribe();
+    const req = http.expectOne('/api/usuarios/7');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      email: 'lab@medichain.demo',
+      rol: 'LABORATORIO',
+      password: 'NuevaClave1',
+      organizacionId: 10,
+    });
+  });
+
+  it('al cambiar la contraseña de un usuario sin organización no envía organizacionId', () => {
+    api.cambiarPassword({ id: 2, email: 'i@medichain.demo', rol: 'ANMAT', activo: true }, 'NuevaClave1').subscribe();
+    expect(http.expectOne('/api/usuarios/2').request.body).toEqual({
+      email: 'i@medichain.demo',
+      rol: 'ANMAT',
+      password: 'NuevaClave1',
+    });
+  });
 });

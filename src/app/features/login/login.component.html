@@ -378,35 +378,20 @@
             </div>
             <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" novalidate>
                 <label class="login-label">Usuario (Correo electrónico)
-                    <select id="select-usuario" formControlName="email" class="login-input">
-                        <option value="">
-                            {{ cargando() ? 'Cargando usuarios de la base de datos...' : 'Seleccioná un usuario...' }}
-                        </option>
-                        @for (u of usuarios(); track u.id) {
-                            <option [value]="u.email" [disabled]="!u.activo">
-                                {{ u.email }} — {{ getRolLabel(u.rol) }}{{ !u.activo ? ' (Inactivo)' : '' }}
-                            </option>
-                        }
-                    </select>
+                    <input type="email" id="input-email" formControlName="email" class="login-input"
+                        placeholder="correo@empresa.com" autocomplete="username" autocapitalize="none">
                 </label>
                 <label class="login-label">Contraseña
                     <input type="password" formControlName="password" class="login-input"
                         placeholder="••••••••" autocomplete="current-password">
                 </label>
-                <label class="login-label">Organización
-                    <select id="select-organizacion" formControlName="organizacionId" class="login-input">
-                        <option [ngValue]="null">
-                            {{ necesitaOrganizacion() ? 'Seleccioná una organización...' : 'Sin organización (Sede Central / ANMAT / Paciente)' }}
-                        </option>
-                        @for (o of organizacionesDisponibles(); track o.id) {
-                            <option [ngValue]="o.id">{{ o.nombre }} ({{ o.cuit }})</option>
-                        }
-                    </select>
-                </label>
+                @if (aviso() && !errorLogin()) {
+                    <div class="login-error" role="status">{{ aviso() }}</div>
+                }
                 @if (errorLogin()) {
                     <div class="login-error" role="alert">{{ errorLogin() }}</div>
                 }
-                <button type="submit" class="login-button" [disabled]="enviando()">Ingresar</button>
+                <button type="submit" class="login-button" [disabled]="enviando()">{{ enviando() ? 'Ingresando...' : 'Ingresar' }}</button>
             </form>
         </div>
     </div>

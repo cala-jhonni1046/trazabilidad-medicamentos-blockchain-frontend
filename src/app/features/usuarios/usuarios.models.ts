@@ -6,16 +6,26 @@ export interface UsuarioDto {
   email: string;
   rol: RolUsuario;
   activo: boolean;
+  organizacionId?: number | null;
   fechaCreacion?: string;
   fechaActualizacion?: string;
 }
 
-/** Refleja UsuarioRequestDTO del backend (la organización NO forma parte del usuario). */
+/** Refleja UsuarioRequestDTO del backend. */
 export interface UsuarioRequest {
   email: string;
   rol: RolUsuario;
   activo?: boolean;
+  /** Mínimo 8 caracteres. Obligatoria al crear; al editar, solo si se cambia. */
+  password?: string;
+  /** Obligatoria para LABORATORIO, DISTRIBUIDOR y FARMACIA; no se envía para ANMAT ni SUPERADMIN. */
+  organizacionId?: number | null;
 }
+
+export const PASSWORD_MIN = 8;
+
+/** Roles que operan en nombre de una organización y por eso exigen elegirla. */
+export const ROLES_CON_ORGANIZACION: RolUsuario[] = ['LABORATORIO', 'DISTRIBUIDOR', 'FARMACIA'];
 
 export const ROL_LABELS: Record<RolUsuario, string> = {
   SUPERADMIN: 'Sede Central (SUPERADMIN)',
