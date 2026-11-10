@@ -73,7 +73,7 @@ export class PortalComponent {
   /** Confirmación visible tras un reporte recién enviado desde esta pantalla. */
   reporteConfirmadoId = signal<number | null>(null);
 
-  /** Un paciente con sesión simulada vuelve al ingreso; sin esto /login lo devolvía al portal. */
+  /** Un paciente con sesión iniciada vuelve al ingreso; sin esto /login lo devolvía al portal. */
   cerrarSesion(): void {
     this.session.cerrarSesion();
     void this.router.navigate(['/login']);

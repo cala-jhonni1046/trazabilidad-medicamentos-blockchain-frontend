@@ -51,7 +51,7 @@ export function dniValidator(): ValidatorFn {
     const texto = String(valor).trim();
     const digitos = normalizarDni(texto);
     if (!/^[\d.\s]+$/.test(texto) || (digitos.length !== 7 && digitos.length !== 8)) {
-      return { dniInvalido: 'El DNI debe tener 7 u 8 dígitos (se aceptan puntos). Debe ser ficticio.' };
+      return { dniInvalido: 'El DNI debe tener 7 u 8 dígitos (se aceptan puntos).' };
     }
     return null;
   };

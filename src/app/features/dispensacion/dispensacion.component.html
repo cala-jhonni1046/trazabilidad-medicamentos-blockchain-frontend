@@ -7,7 +7,7 @@
 
   <p class="aviso-dni" role="note">
     <mat-icon>warning</mat-icon>
-    Los DNI del MVP deben ser ficticios. No se muestran ni se guardan en pantalla después de enviar.
+    El DNI del paciente no se muestra ni se guarda en pantalla después de enviar.
   </p>
 
   @if (confirmacion(); as c) {
@@ -70,7 +70,7 @@
 
           <form [formGroup]="form" (ngSubmit)="dispensar()" class="form-dispensar">
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>DNI del paciente (opcional, ficticio)</mat-label>
+              <mat-label>DNI del paciente (opcional)</mat-label>
               <input matInput formControlName="dniPaciente" autocomplete="off" maxlength="16" />
               @if (form.controls.dniPaciente.hasError('dniInvalido')) {
                 <mat-error>{{ form.controls.dniPaciente.getError('dniInvalido') }}</mat-error>
