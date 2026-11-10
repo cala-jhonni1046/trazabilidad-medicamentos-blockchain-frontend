@@ -1,13 +1,13 @@
 <section class="auditoria-page">
   <app-page-header
     title="Auditoría integral de unidad QR"
-    subtitle="Reconstrucción del histórico, custodia demostrativa, cuarentenas y dispensación"
+    subtitle="Reconstrucción del histórico, custodia, cuarentenas y dispensación"
     icon="qr_code_scanner"
   ></app-page-header>
 
   <p class="aviso-demo" role="note">
     <mat-icon>info</mat-icon>
-    Los hashes de custodia son demostrativos (no prueban una blockchain distribuida). Por privacidad, no se exponen datos personales de pacientes en la dispensación.
+    Los hashes de custodia se generan y guardan en este sistema; todavía no están anclados a una red blockchain externa. Por privacidad, no se exponen datos personales de pacientes en la dispensación.
   </p>
 
   <!-- Buscador de QR -->
@@ -181,7 +181,7 @@
                     <div class="hash-box">
                       <span class="hash-label">
                         <mat-icon>fingerprint</mat-icon>
-                        Hash de custodia (demostrativo):
+                        Hash de custodia:
                       </span>
                       <code>{{ paso.hashDemostrativo }}</code>
                     </div>

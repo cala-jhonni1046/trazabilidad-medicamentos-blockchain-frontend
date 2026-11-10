@@ -10,11 +10,6 @@
     </a>
   </app-page-header>
 
-  <p class="aviso-demo" role="note">
-    <mat-icon>info</mat-icon>
-    MVP académico: no hay verificación clínica ni autenticación real.
-  </p>
-
   <app-loading-overlay [loading]="cargando()" message="Calculando inventario…"></app-loading-overlay>
 
   @if (!cargando()) {

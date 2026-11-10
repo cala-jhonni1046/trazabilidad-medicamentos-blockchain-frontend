@@ -1,7 +1,7 @@
 <div class="despacho-detalle-container">
   <app-page-header
     [title]="'Despacho: Remito ' + (despacho()?.numeroRemito || '#' + despachoId)"
-    subtitle="Detalle del traslado logístico y eventos demostrativos de custodia"
+    subtitle="Detalle del traslado logístico y eventos de custodia"
     icon="local_shipping"
   >
     <div actions>
@@ -32,11 +32,11 @@
     </div>
   </app-page-header>
 
-  <!-- Aviso de Demostración Académica -->
+  <!-- Nota sobre los hashes de la cadena de custodia -->
   <div class="mock-notice-card">
     <mat-icon class="notice-icon">info</mat-icon>
     <div class="notice-text">
-      Los eventos y hashes son registros locales demostrativos. No certifican autenticidad legal ni representan una blockchain distribuida.
+      Cada evento de custodia incluye el hash del anterior. Los hashes se generan y guardan en este sistema y todavía no están anclados a una red blockchain externa.
     </div>
   </div>
 
@@ -130,7 +130,7 @@
     <mat-card class="eventos-card" appearance="outlined">
       <mat-card-header>
         <mat-card-title>Línea de custodia del despacho</mat-card-title>
-        <mat-card-subtitle>Historial cronológico de eventos y hashes demostrativos</mat-card-subtitle>
+        <mat-card-subtitle>Historial cronológico de eventos y hashes</mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
